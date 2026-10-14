@@ -4,6 +4,11 @@
 
 这是中文版更新日志。英文版请见 `CHANGELOG-EN.md`，俄文版请见 `CHANGELOG-RU.md`。
 
+## [1.1.2-beta1] - 2026-10-14 - 减少 MTProxy 日志噪声
+
+- MTProxy 身份验证拒绝和正常流关闭消息现在使用 debug 日志级别。其他握手和传输故障保留原有级别；诊断被拒绝的连接时请启用 debug 日志。
+- 构建升级至 Go `1.26.9` 和 `golang.org/x/net v0.60.0`，修复 HTTP/HTTP2、TLS、multipart 解析和模板中的已知漏洞。
+
 ## [1.1.1] - 2026-10-01 - sing-box 1.14、AmneziaWG 3.1、OpenVPN 端点与 failover 内存清理
 
 - 内置核心升级至 sing-box-extended v1.14.0-extended-2.7.5：OpenVPN 客户端与服务端端点、cloudflared 入站、USB/IP 服务，以及 Hysteria、Hysteria 2、TUIC、Mieru、MASQUE 和 WireGuard 的新字段。

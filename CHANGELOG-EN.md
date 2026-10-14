@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-beta1] - 2026-10-14 - quieter MTProxy logs
+
+- MTProxy authentication rejections and routine stream shutdown messages now use the debug log level. Other handshake and transport failures keep their existing severity; enable debug logging to inspect rejected connections.
+- Updated builds to Go `1.26.9` and `golang.org/x/net v0.60.0` to fix known HTTP/HTTP2, TLS, multipart parsing and template vulnerabilities.
+
 ## [1.1.1] - 2026-10-01 - sing-box 1.14, AmneziaWG 3.1, OpenVPN endpoints, failover cleanup
 
 - Bundled core is sing-box-extended v1.14.0-extended-2.7.5: OpenVPN client and server endpoints, cloudflared inbound, USB/IP services, and new fields for Hysteria, Hysteria 2, TUIC, Mieru, MASQUE and WireGuard.

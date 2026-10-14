@@ -64,6 +64,7 @@ Release history and upgrade notes:
 - Russian changelog: [`CHANGELOG-RU.md`](CHANGELOG-RU.md)
 - Simplified Chinese changelog: [`CHANGELOG-ZH.md`](CHANGELOG-ZH.md)
 - Latest stable notes: [`docs/releases/v1.1.1.md`](docs/releases/v1.1.1.md)
+- Latest beta notes: [`docs/releases/v1.1.2-beta1.md`](docs/releases/v1.1.2-beta1.md)
 - Upstream parity reference: [`docs/releases/v1.5.10-beta7.md`](docs/releases/v1.5.10-beta7.md)
 
 ## How this fork differs from `alireza0/s-ui`
@@ -219,7 +220,7 @@ and tokens. Database migrations run on the first start after an upgrade.
 | Channel | Version | Notes |
 | --- | --- | --- |
 | Stable | [`v1.1.1`](docs/releases/v1.1.1.md) | Recommended for production. Includes the full 1.1.1 series: sing-box-extended 1.14 core, AmneziaWG 3.1 random trailers and disable-cookies, OpenVPN endpoints, structured core forms, and installer and failover memory leak fixes. |
-| Beta | [`v1.1.1`](docs/releases/v1.1.1.md) | The 1.1.1 series is now released as stable. |
+| Beta | [`v1.1.2-beta1`](docs/releases/v1.1.2-beta1.md) | Reduces MTProxy log noise and includes Go 1.26.9 and x/net security fixes. |
 
 ### Upgrade to the current stable release
 
@@ -235,20 +236,20 @@ The version argument matters. If you run a tagged `install.sh` without an
 argument, the installer queries GitHub for the latest stable release. It does
 not infer the release from the script URL.
 
-To install a specific version explicitly:
+### Upgrade to the current beta release
 
 ```sh
 curl -fLsS \
-  https://raw.githubusercontent.com/deposist/s-ui-x-extended/v1.1.1/install.sh \
-  | sudo bash -s -- v1.1.1
+  https://raw.githubusercontent.com/deposist/s-ui-x-extended/v1.1.2-beta1/install.sh \
+  | sudo bash -s -- v1.1.2-beta1
 ```
 
 If you are already running as `root`, the equivalent short form is:
 
 ```sh
 bash <(curl -fLsS \
-  https://raw.githubusercontent.com/deposist/s-ui-x-extended/v1.1.1/install.sh) \
-  v1.1.1
+  https://raw.githubusercontent.com/deposist/s-ui-x-extended/v1.1.2-beta1/install.sh) \
+  v1.1.2-beta1
 ```
 
 After the upgrade, check the installed version and service state:
@@ -268,11 +269,13 @@ git clone --branch v1.1.1 --depth 1 \
 cd s-ui-x-extended
 sudo bash install.sh v1.1.1
 ```
+For the beta release, use `v1.1.2-beta1` in both the clone command and the installer argument.
+
 
 ### Windows
 
 - Stable: download [`v1.1.1`](https://github.com/deposist/s-ui-x-extended/releases/tag/v1.1.1), extract the matching ZIP archive, and run `install-windows.bat` as Administrator.
-- Beta: download [`v1.1.1`](https://github.com/deposist/s-ui-x-extended/releases/tag/v1.1.1), extract the matching ZIP archive, and run `install-windows.bat` as Administrator.
+- Beta: download [`v1.1.2-beta1`](https://github.com/deposist/s-ui-x-extended/releases/tag/v1.1.2-beta1), extract the matching ZIP archive, and run `install-windows.bat` as Administrator.
 
 Upgrade and rollback notes are in the changelogs:
 [EN](CHANGELOG-EN.md), [RU](CHANGELOG-RU.md), and [中文](CHANGELOG-ZH.md).
@@ -341,7 +344,7 @@ Docker Compose option:
 ```shell
 services:
   s-ui:
-    image: ghcr.io/deposist/s-ui-x:v1.1.1
+    image: ghcr.io/deposist/s-ui-x:v1.1.2-beta1
     container_name: s-ui
     hostname: "s-ui"
     network_mode: host
@@ -366,8 +369,10 @@ docker run -itd \
     -v $PWD/cert/:/root/cert/ \
     --name s-ui \
     --restart=unless-stopped \
-    ghcr.io/deposist/s-ui-x:v1.1.1
+    ghcr.io/deposist/s-ui-x:v1.1.2-beta1
 ```
+These Docker examples use the beta release. Use `v1.1.1` for the stable release.
+
 
 Build the image yourself:
 

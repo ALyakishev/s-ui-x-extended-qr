@@ -417,7 +417,7 @@ config_after_install() {
         # which under `set -e` + the ERR trap aborts the committed transaction and
         # rolls back the whole install. Treat EOF as "decline" instead, matching
         # the interactive default of answering anything but y/Y.
-        echo "$(t continue_settings)"
+        t continue_settings
         config_confirm=""
     fi
     if [[ "${config_confirm}" == "y" || "${config_confirm}" == "Y" ]]; then

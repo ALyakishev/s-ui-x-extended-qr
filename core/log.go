@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/deposist/s-ui-x-extended/config"
@@ -184,6 +185,9 @@ type observableLogger struct {
 }
 
 func (l *observableLogger) Log(ctx context.Context, level log.Level, args []any) {
+	if strings.HasPrefix(l.tag, "inbound/mtproxy[") {
+		level = mtproxyLogLevel(level, args)
+	}
 	level = log.OverrideLevelFromContext(level, ctx)
 	if level > l.level {
 		return
