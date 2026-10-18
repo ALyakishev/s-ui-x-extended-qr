@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -88,6 +89,14 @@ func (o *OutboundService) GetAllConfig(db *gorm.DB) ([]json.RawMessage, error) {
 		return nil, err
 	}
 	for _, outbound := range outbounds {
+		if outbound.Type == SubscriptionType {
+			configs, err := assembleSubscription(*outbound)
+			if err != nil {
+				return nil, err
+			}
+			outboundsJson = append(outboundsJson, configs...)
+			continue
+		}
 		outboundJson, err := outboundCoreJSON(db, *outbound)
 		if err != nil {
 			return nil, err
@@ -116,6 +125,14 @@ func (s *OutboundService) saveOutboundUpsert(tx *gorm.DB, data json.RawMessage) 
 	if err := outbound.UnmarshalJSON(data); err != nil {
 		return nil, err
 	}
+	if strings.HasPrefix(outbound.Tag, subscriptionTagPrefix) {
+		return nil, common.NewError("outbound tag uses a reserved subscription prefix")
+	}
+	if outbound.Type == SubscriptionType {
+		if err := prepareSubscription(context.Background(), &outbound); err != nil {
+			return nil, err
+		}
+	}
 	if outbound.Type == FailoverType {
 		if err := validateFailoverGroup(tx, outbound); err != nil {
 			return nil, err
@@ -136,12 +153,13 @@ func (s *OutboundService) saveOutboundUpsert(tx *gorm.DB, data json.RawMessage) 
 			return nil, err
 		}
 	}
-	var oldTag string
+	var old model.Outbound
 	if outbound.Id > 0 {
-		if err := tx.Model(model.Outbound{}).Select("tag").Where("id = ?", outbound.Id).Find(&oldTag).Error; err != nil {
+		if err := tx.Where("id = ?", outbound.Id).First(&old).Error; err != nil {
 			return nil, err
 		}
 	}
+	oldTag := old.Tag
 	renamed := oldTag != "" && oldTag != outbound.Tag
 	if renamed {
 		// Renaming a referenced tag is treated like deleting the old tag: the
@@ -157,6 +175,9 @@ func (s *OutboundService) saveOutboundUpsert(tx *gorm.DB, data json.RawMessage) 
 
 	if err := tx.Save(&outbound).Error; err != nil {
 		return nil, err
+	}
+	if outbound.Type == SubscriptionType || old.Type == SubscriptionType {
+		return &entityCoreChange{needsRestart: true, restartReason: "subscription server selection changed"}, nil
 	}
 
 	refs, err := outboundTagReferences(tx, outbound.Tag, outbound.Id, 0)
@@ -194,8 +215,15 @@ func (s *OutboundService) saveOutboundDelete(tx *gorm.DB, data json.RawMessage) 
 	if len(refs) > 0 {
 		return nil, formatTagReferenceError("outbound", tag, refs)
 	}
+	var old model.Outbound
+	if err := tx.Where("tag = ?", tag).Find(&old).Error; err != nil {
+		return nil, err
+	}
 	if err := tx.Where("tag = ?", tag).Delete(model.Outbound{}).Error; err != nil {
 		return nil, err
+	}
+	if old.Type == SubscriptionType {
+		return &entityCoreChange{needsRestart: true, restartReason: "subscription outbound removed"}, nil
 	}
 	return &entityCoreChange{removeTags: []string{tag}}, nil
 }

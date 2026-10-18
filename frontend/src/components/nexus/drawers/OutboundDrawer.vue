@@ -75,6 +75,7 @@
       <Selector v-if="outbound.type == outTypes.Selector" :data="outbound" :tags="tags" />
       <UrlTest v-if="outbound.type == outTypes.URLTest" :data="outbound" :tags="tags" />
       <Failover v-if="outbound.type == outTypes.Failover" :data="outbound" :tags="tags" />
+      <Subscription v-if="outbound.type == outTypes.Subscription" :data="outbound" @validity="subscriptionValid = $event" />
       <Block v-if="outbound.type == outTypes.Block" :data="outbound" />
       <CoreFailover v-if="outbound.type == outTypes.CoreFailover" :data="outbound" :tags="tags" />
       <Mieru v-if="outbound.type == outTypes.Mieru" direction="out" :data="outbound" :field-hints="currentFieldHints" />
@@ -135,6 +136,7 @@ import Ssh from '@/components/protocols/Ssh.vue'
 import Selector from '@/components/protocols/Selector.vue'
 import UrlTest from '@/components/protocols/UrlTest.vue'
 import Failover from '@/components/protocols/Failover.vue'
+import Subscription from '@/components/protocols/Subscription.vue'
 import Block from '@/components/protocols/Block.vue'
 import CoreFailover from '@/components/protocols/CoreFailover.vue'
 import Mieru from '@/components/protocols/Mieru.vue'
@@ -170,11 +172,12 @@ export default {
       title: "add",
       link: "",
       loading: false,
+      subscriptionValid: false,
       snapshot: "",
       outTypes: OutTypes,
       capabilityRows: <CapabilityRow[]>[],
-      NoDial: [OutTypes.Selector, OutTypes.URLTest, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Bond, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Parser, OutTypes.Fallback, OutTypes.Bridge],
-      NoServer: [OutTypes.Direct, OutTypes.Selector, OutTypes.URLTest, OutTypes.Tor, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Bond, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Parser, OutTypes.Fallback, OutTypes.Bridge],
+      NoDial: [OutTypes.Subscription, OutTypes.Selector, OutTypes.URLTest, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Bond, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Parser, OutTypes.Fallback, OutTypes.Bridge],
+      NoServer: [OutTypes.Subscription, OutTypes.Direct, OutTypes.Selector, OutTypes.URLTest, OutTypes.Tor, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Bond, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Parser, OutTypes.Fallback, OutTypes.Bridge],
     }
   },
   async mounted() {
@@ -223,6 +226,7 @@ export default {
     async saveChanges() {
       // Guard against double-submit (button is also :disabled while loading).
       if (!this.$props.visible || this.loading) return
+      if (this.saveBlockedReason) return
       // check duplicate tag
       const isDuplicatedTag = Data().checkTag("outbound",this.$props.id, this.outbound.tag)
       if (isDuplicatedTag) return
@@ -251,7 +255,7 @@ export default {
   },
   computed: {
     outTypeItems() {
-      return capabilityTypeItems(this.outTypes, this.capabilityRows)
+      return capabilityTypeItems(this.outTypes, this.capabilityRows).map(item => item.value === OutTypes.Subscription ? { ...item, title: this.$t('subscriptionOutbound.name') } : item)
     },
     dirty(): boolean {
       return this.snapshot !== "" && JSON.stringify(this.outbound) !== this.snapshot
@@ -262,6 +266,7 @@ export default {
     saveBlockedReason(): string {
       if (this.outbound == undefined) return this.$t('error.invalidData')
       if (isBlankIdentity(this.outbound.tag)) return this.$t('form.cannotSave.tagRequired')
+      if (this.outbound.type === OutTypes.Subscription && !this.subscriptionValid) return this.$t('subscriptionOutbound.selectionRequired')
       if (this.outbound.server_port != null && (this.outbound.server_port > 65535 || this.outbound.server_port < 1)) {
         return this.$t('form.cannotSave.portRange')
       }
@@ -281,7 +286,7 @@ export default {
       }
     },
   },
-  components: { EntityDrawer, FormSection, SettingInfo, Dial, Multiplex, Transport, OutTLS,
+  components: { Subscription, EntityDrawer, FormSection, SettingInfo, Dial, Multiplex, Transport, OutTLS,
     Direct, Socks, Http, Shadowsocks, Vmess, Trojan,
     Wireguard, Hysteria, Naive, ShadowTls, Vless, Tuic,
     Hysteria2, AnyTls, Tor, Ssh, Selector, UrlTest, Failover, Block, CoreFailover,

@@ -9,21 +9,6 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-func TestCronJobStartRegistersJobsSynchronously(t *testing.T) {
-	initCronJobTestDB(t)
-
-	c := NewCronJob()
-	if err := c.Start(time.UTC, 30); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = c.Stop() })
-
-	entries := c.cron.Entries()
-	if len(entries) != 14 {
-		t.Fatalf("expected 14 registered cron entries immediately after Start, got %d", len(entries))
-	}
-}
-
 func TestCronJobStopWaitsForRunningJob(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})

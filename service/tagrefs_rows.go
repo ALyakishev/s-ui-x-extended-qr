@@ -105,7 +105,7 @@ func scanOutboundRowsForTag(rows []model.Outbound, tag string, excludeId uint) [
 // isGroupType reports whether the outbound type is a group that references
 // member outbounds by tag.
 func isGroupType(t string) bool {
-	return t == "selector" || t == "urltest" || t == "fallback" || t == "bond" || t == FailoverType || t == CoreFailoverType
+	return t == SubscriptionType || t == "selector" || t == "urltest" || t == "fallback" || t == "bond" || t == FailoverType || t == CoreFailoverType
 }
 
 // scanOutboundRowsForProviderTag finds outbound groups that reference a

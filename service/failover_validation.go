@@ -88,7 +88,7 @@ func validateFailoverGroup(tx *gorm.DB, o model.Outbound) error {
 		if !exists {
 			return common.NewErrorf("failover member %q does not exist", member)
 		}
-		if memberType == "selector" || memberType == "urltest" || memberType == FailoverType {
+		if memberType == SubscriptionType || memberType == "selector" || memberType == "urltest" || memberType == FailoverType {
 			return common.NewErrorf("member %q is a group; failover members must be plain outbounds", member)
 		}
 	}

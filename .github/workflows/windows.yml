@@ -6,7 +6,7 @@ on:
       tag:
         description: "Release tag"
         required: true
-        default: "v1.1.2-beta1"
+        default: "v1.1.2-beta2"
         type: string
   workflow_call:
     inputs:

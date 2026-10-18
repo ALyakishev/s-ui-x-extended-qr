@@ -59,12 +59,20 @@ type FailoverGroupConfig struct {
 // settings. Malformed rows are skipped so one broken group never stalls the rest.
 func LoadFailoverGroups(db *gorm.DB) ([]FailoverGroupConfig, error) {
 	var rows []model.Outbound
-	if err := db.Model(model.Outbound{}).Where("type = ?", FailoverType).Find(&rows).Error; err != nil {
+	if err := db.Model(model.Outbound{}).Where("type IN ?", []string{FailoverType, SubscriptionType}).Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	groups := make([]FailoverGroupConfig, 0, len(rows))
 	for _, row := range rows {
 		opts, err := parseFailoverOptions(row.Options)
+		if row.Type == SubscriptionType {
+			sub, subErr := parseSubscriptionOptions(row.Options)
+			if subErr != nil || sub.Backup == "" {
+				continue
+			}
+			opts = failoverOptions{Outbounds: subscriptionMemberTags(row, sub), Failover: sub.Failover}
+			err = nil
+		}
 		if err != nil || len(opts.Outbounds) == 0 {
 			continue
 		}

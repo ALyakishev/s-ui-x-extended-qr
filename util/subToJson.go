@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"net"
@@ -95,29 +94,40 @@ func getExternalHTTPClient() *http.Client {
 		externalHTTPClient = &http.Client{
 			Timeout:   15 * time.Second,
 			Transport: transport,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= 10 {
+					return common.NewError("too many redirects")
+				}
+				return validateExternalURL(req.URL.String())
+			},
 		}
 	})
 	return externalHTTPClient
 }
 
 func GetExternalLink(rawURL string) (string, error) {
+	return getExternalLink(context.Background(), rawURL, "")
+}
+
+func getExternalLink(ctx context.Context, rawURL, userAgent string) (string, error) {
+	rawURL = subscriptionURL(rawURL)
 	if err := validateExternalURL(rawURL); err != nil {
-		logger.Warning("sub: invalid external URL:", err)
-		return "", err
+		return "", common.NewError("invalid or blocked subscription URL")
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
-		return "", err
+		return "", common.NewError("invalid subscription request")
+	}
+	if userAgent != "" {
+		req.Header.Set("User-Agent", userAgent)
 	}
 	response, err := getExternalHTTPClient().Do(req)
 	if err != nil {
 		if errors.Is(err, errBlockedExternalAddress) {
-			logger.Warning("sub: external URL resolves to blocked address:", err)
-			return "", err
+			return "", errBlockedExternalAddress
 		}
-		logger.Warning("sub: Error making HTTP request:", err)
-		return "", err
+		return "", common.NewError("external subscription request failed")
 	}
 	defer response.Body.Close()
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
@@ -133,11 +143,19 @@ func GetExternalLink(rawURL string) (string, error) {
 		return "", common.NewError("response is too large")
 	}
 
-	data := StrOrBase64Encoded(string(body))
-	return data, nil
+	data := strings.TrimSpace(strings.TrimPrefix(string(body), "\ufeff"))
+	return strings.TrimSpace(strings.TrimPrefix(decodeSubscriptionBody(data), "\ufeff")), nil
 }
 
 func GetExternalSub(url string) ([]map[string]interface{}, error) {
+	return GetExternalSubWithUserAgent(url, "")
+}
+
+func GetExternalSubWithUserAgent(rawURL, userAgent string) ([]map[string]interface{}, error) {
+	return GetExternalSubContext(context.Background(), rawURL, userAgent)
+}
+
+func GetExternalSubContext(ctx context.Context, url, userAgent string) ([]map[string]interface{}, error) {
 	var err error
 	var result []map[string]interface{}
 
@@ -145,7 +163,7 @@ func GetExternalSub(url string) ([]map[string]interface{}, error) {
 		return nil, common.NewError("no url")
 	}
 
-	data, err := GetExternalLink(url)
+	data, err := getExternalLink(ctx, url, userAgent)
 	if err != nil {
 		return nil, err
 	}
@@ -153,41 +171,18 @@ func GetExternalSub(url string) ([]map[string]interface{}, error) {
 		return nil, common.NewError("no result")
 	}
 
-	// if the data is a JSON object
-	if strings.HasPrefix(data, "{") && strings.HasSuffix(data, "}") {
-		var jsonData map[string]interface{}
-		err = json.Unmarshal([]byte(data), &jsonData)
-		if err != nil {
-			logger.Warning("sub: Error unmarshalling JSON:", err)
-			return nil, err
-		}
-		outbounds, ok := jsonData["outbounds"].([]any)
-		if !ok {
-			logger.Warning("sub: missing outbounds field")
-			return nil, common.NewError("invalid subscription: missing outbounds")
-		}
-		for _, outbound := range outbounds {
-			outboundMap, ok := outbound.(map[string]interface{})
-			if ok && len(outboundMap) > 0 {
-				oType, _ := outboundMap["type"].(string)
-				switch oType {
-				case "urltest", "direct", "selector", "block":
-					continue
-				default:
-					result = append(result, outboundMap)
-				}
-			}
-		}
-		if len(result) == 0 {
-			return nil, common.NewError("no result")
-		}
-		return result, nil
+	if nodes, structured, err := structuredSubscription(data); structured {
+		return nodes, err
 	}
 	// if data is a text
 	links := strings.Split(data, "\n")
 	skipReasons := make(map[string]struct{})
 	skipped := 0
 	for _, link := range links {
+		link = strings.TrimSpace(link)
+		if link == "" || strings.HasPrefix(link, "#") {
+			continue
+		}
 		linkToJson, _, err := GetOutbound(link, 0)
 		if err != nil {
 			// Report why a link was dropped. A link the operator pasted and that

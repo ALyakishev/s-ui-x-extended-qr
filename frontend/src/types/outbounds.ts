@@ -5,6 +5,7 @@ import { Dial } from "./dial"
 
 export const OutTypes = {
   Direct: 'direct',
+  Subscription: 'subscription',
   SOCKS: 'socks',
   HTTP: 'http',
   Shadowsocks: 'shadowsocks',
@@ -583,6 +584,7 @@ export type Outbound = InterfaceMap[keyof InterfaceMap]
 // Create defaultValues object dynamically
 const defaultValues: Record<OutType, Outbound> = {
   direct: { type: OutTypes.Direct },
+  subscription: { type: OutTypes.Subscription, url: '', user_agent: 'sing-box', primary: '', backup: '', update_interval: '24h', nodes: [], failover: { enabled: true, interval: '30s', hysteresis: 2 } },
   socks: { type: OutTypes.SOCKS, version: "5" },
   http: { type: OutTypes.HTTP, tls: {} },
   shadowsocks: { type: OutTypes.Shadowsocks, method: 'none', multiplex: {} },
@@ -619,6 +621,7 @@ const defaultValues: Record<OutType, Outbound> = {
 }
 
 export function createOutbound<T extends Outbound>(type: string,json?: Partial<T>): Outbound {
-  const defaultObject: Outbound = { ...defaultValues[type], ...(json || {}) }
+  const defaults = type === OutTypes.Subscription ? structuredClone(defaultValues[type]) : defaultValues[type]
+  const defaultObject: Outbound = { ...defaults, ...(json || {}) }
   return defaultObject
 }

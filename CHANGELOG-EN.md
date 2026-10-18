@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-beta2] - 2026-10-19 - subscription outbounds
+
+- Added the Subscription outbound type. Load a subscription and choose a specific primary server, with an optional backup from the same subscription. Routing rules and selectors use the outbound's tag.
+- Supports HTTP(S) subscriptions used by Happ and Hiddify: share links, base64 lists, sing-box JSON and Clash/Mihomo YAML. Proprietary encrypted links are not supported.
+- Failover probes the selected servers and returns to the primary after the configured number of successful checks. If both servers are down, traffic stays on the current selection; it never falls back to direct.
+- Subscription refresh keeps selections by exact unique name. Failed downloads, invalid updates and missing selected servers retain the last saved configuration. Saving or applying changed server settings restarts the core and briefly interrupts connections.
+
+Usage, upgrade and rollback: [release notes](docs/releases/v1.1.2-beta2.md).
+
 ## [1.1.2-beta1] - 2026-10-14 - quieter MTProxy logs
 
 - MTProxy authentication rejections and routine stream shutdown messages now use the debug log level. Other handshake and transport failures keep their existing severity; enable debug logging to inspect rejected connections.

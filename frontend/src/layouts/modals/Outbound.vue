@@ -96,6 +96,7 @@
               <UrlTest v-if="outbound.type == outTypes.URLTest" :data="outbound" :tags="tags" />
               <Bond v-if="outbound.type == outTypes.Bond" :data="outbound" />
               <Failover v-if="outbound.type == outTypes.Failover" :data="outbound" />
+              <Subscription v-if="outbound.type == outTypes.Subscription" :data="outbound" @validity="subscriptionValid = $event" />
               <Block v-if="outbound.type == outTypes.Block" :data="outbound" />
               <CoreFailover v-if="outbound.type == outTypes.CoreFailover" :data="outbound" :tags="tags" />
               <Fallback v-if="outbound.type == outTypes.Fallback" :data="outbound" :tags="tags" />
@@ -135,7 +136,7 @@
           color="primary"
           variant="tonal"
           :loading="loading"
-          :disabled="loading"
+          :disabled="loading || (outbound.type === outTypes.Subscription && !subscriptionValid)"
           @click="saveChanges"
         >
           {{ $t('actions.save') }}
@@ -179,6 +180,7 @@ import Selector from '@/components/protocols/Selector.vue'
 import UrlTest from '@/components/protocols/UrlTest.vue'
 import Bond from '@/components/protocols/Bond.vue'
 import Failover from '@/components/protocols/Failover.vue'
+import Subscription from '@/components/protocols/Subscription.vue'
 import Block from '@/components/protocols/Block.vue'
 import CoreFailover from '@/components/protocols/CoreFailover.vue'
 import Fallback from '@/components/protocols/Fallback.vue'
@@ -202,14 +204,15 @@ export default {
       tab: "t1",
       link: "",
       loading: false,
+      subscriptionValid: false,
       outTypes: OutTypes,
       capabilityRows: <CapabilityRow[]>[],
-      NoDial: [OutTypes.Selector, OutTypes.URLTest, OutTypes.Bond, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Fallback, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Bridge],
+      NoDial: [OutTypes.Subscription, OutTypes.Selector, OutTypes.URLTest, OutTypes.Bond, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Fallback, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Bridge],
       // Call has no server/server_port in the core schema (it joins a room via
       // join_link); the generic fields poisoned saved configs with an unknown
       // "server" key that the core rejects, leaving it crash-looping. Bridge is
       // a local interface bridge with no remote endpoint either.
-      NoServer: [OutTypes.Direct, OutTypes.Selector, OutTypes.URLTest, OutTypes.Tor, OutTypes.MASQUE, OutTypes.Parser, OutTypes.Bond, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Fallback, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Call, OutTypes.Bridge],
+      NoServer: [OutTypes.Subscription, OutTypes.Direct, OutTypes.Selector, OutTypes.URLTest, OutTypes.Tor, OutTypes.MASQUE, OutTypes.Parser, OutTypes.Bond, OutTypes.Failover, OutTypes.Block, OutTypes.CoreFailover, OutTypes.Fallback, OutTypes.BandwidthLimiter, OutTypes.ConnectionLimiter, OutTypes.TrafficLimiter, OutTypes.RateLimiter, OutTypes.Call, OutTypes.Bridge],
     }
   },
   async mounted() {
@@ -259,6 +262,7 @@ export default {
     async saveChanges() {
       // Guard against double-submit (button is also :disabled while loading).
       if (!this.$props.visible || this.loading) return
+      if (this.outbound.type === OutTypes.Subscription && !this.subscriptionValid) return
       // check duplicate tag
       const isDuplicatedTag = Data().checkTag("outbound",this.$props.id, this.outbound.tag)
       if (isDuplicatedTag) return
@@ -288,7 +292,7 @@ export default {
   },
   computed: {
     outTypeItems() {
-      return capabilityTypeItems(this.outTypes, this.capabilityRows)
+      return capabilityTypeItems(this.outTypes, this.capabilityRows).map(item => item.value === OutTypes.Subscription ? { ...item, title: this.$t('subscriptionOutbound.name') } : item)
     },
     currentFieldHints(): Record<string, string> {
       return outboundFieldHintsForType(this.outbound.type)
@@ -304,7 +308,7 @@ export default {
       }
     },
   },
-  components: { SettingInfo, Dial, Multiplex, Transport, OutTLS,
+  components: { Subscription, SettingInfo, Dial, Multiplex, Transport, OutTLS,
     Direct, Socks, Http, Shadowsocks, Vmess, Trojan,
     Wireguard, Hysteria, Naive, ShadowTls, Vless, Tuic,
     Hysteria2, AnyTls, Tor, Ssh, Mieru, Sudoku, TrustTunnel, Call, Masque, Parser, Selector, UrlTest, Bond, Failover, Block, CoreFailover, Fallback,

@@ -85,6 +85,9 @@ func (c *CronJob) Start(loc *time.Location, trafficAge int) error {
 	if _, err := c.cron.AddJob("@every 5s", NewFailoverJob()); err != nil {
 		return err
 	}
+	if _, err := c.cron.AddJob("@every 1m", &subscriptionRefreshJob{ctx: c.ctx}); err != nil {
+		return err
+	}
 	reportScheduler := NewTelegramReportScheduler(c.cron)
 	reportScheduler.Run()
 	if _, err := c.cron.AddJob("@every 1m", reportScheduler); err != nil {
