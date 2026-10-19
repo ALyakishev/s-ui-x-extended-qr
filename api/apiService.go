@@ -865,7 +865,10 @@ func (a *ApiService) LinkConvert(c *gin.Context) {
 
 func (a *ApiService) SubConvert(c *gin.Context) {
 	link := c.Request.FormValue("link")
-	result, err := util.GetExternalSubContext(c.Request.Context(), link, c.Request.FormValue("user_agent"), c.Request.FormValue("hwid"))
+	result, err := util.GetExternalSubContext(c.Request.Context(), link, c.Request.FormValue("user_agent"), util.SubscriptionDevice{
+		HWID: c.Request.FormValue("hwid"), DeviceOS: c.Request.FormValue("device_os"),
+		DeviceModel: c.Request.FormValue("device_model"), OSVersion: c.Request.FormValue("os_version"),
+	})
 	if err != nil {
 		err = common.NewError("subscription download or parsing failed; check URL, access and supported format")
 	}

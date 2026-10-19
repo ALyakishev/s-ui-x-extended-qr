@@ -21,6 +21,13 @@ import (
 
 const maxExternalSubBytes = 4 << 20
 
+type SubscriptionDevice struct {
+	HWID        string `json:"hwid,omitempty"`
+	DeviceOS    string `json:"device_os,omitempty"`
+	DeviceModel string `json:"device_model,omitempty"`
+	OSVersion   string `json:"os_version,omitempty"`
+}
+
 var (
 	externalHTTPClientOnce sync.Once
 	externalHTTPClient     *http.Client
@@ -100,6 +107,9 @@ func getExternalHTTPClient() *http.Client {
 				}
 				if !strings.EqualFold(req.URL.Scheme, via[0].URL.Scheme) || !strings.EqualFold(req.URL.Host, via[0].URL.Host) {
 					req.Header.Del("X-HWID")
+					req.Header.Del("X-Device-OS")
+					req.Header.Del("X-Device-Model")
+					req.Header.Del("X-Ver-OS")
 				}
 				return validateExternalURL(req.URL.String())
 			},
@@ -109,10 +119,10 @@ func getExternalHTTPClient() *http.Client {
 }
 
 func GetExternalLink(rawURL string) (string, error) {
-	return getExternalLink(context.Background(), rawURL, "", "")
+	return getExternalLink(context.Background(), rawURL, "", SubscriptionDevice{})
 }
 
-func getExternalLink(ctx context.Context, rawURL, userAgent, hwid string) (string, error) {
+func getExternalLink(ctx context.Context, rawURL, userAgent string, device SubscriptionDevice) (string, error) {
 	rawURL = subscriptionURL(rawURL)
 	if err := validateExternalURL(rawURL); err != nil {
 		return "", common.NewError("invalid or blocked subscription URL")
@@ -125,8 +135,17 @@ func getExternalLink(ctx context.Context, rawURL, userAgent, hwid string) (strin
 	if userAgent != "" {
 		req.Header.Set("User-Agent", userAgent)
 	}
-	if hwid != "" {
-		req.Header.Set("X-HWID", hwid)
+	if device.HWID != "" {
+		req.Header.Set("X-HWID", device.HWID)
+	}
+	if device.DeviceOS != "" {
+		req.Header.Set("X-Device-OS", device.DeviceOS)
+	}
+	if device.DeviceModel != "" {
+		req.Header.Set("X-Device-Model", device.DeviceModel)
+	}
+	if device.OSVersion != "" {
+		req.Header.Set("X-Ver-OS", device.OSVersion)
 	}
 	response, err := getExternalHTTPClient().Do(req)
 	if err != nil {
@@ -158,10 +177,10 @@ func GetExternalSub(url string) ([]map[string]interface{}, error) {
 }
 
 func GetExternalSubWithUserAgent(rawURL, userAgent string) ([]map[string]interface{}, error) {
-	return GetExternalSubContext(context.Background(), rawURL, userAgent, "")
+	return GetExternalSubContext(context.Background(), rawURL, userAgent, SubscriptionDevice{})
 }
 
-func GetExternalSubContext(ctx context.Context, url, userAgent, hwid string) ([]map[string]interface{}, error) {
+func GetExternalSubContext(ctx context.Context, url, userAgent string, device SubscriptionDevice) ([]map[string]interface{}, error) {
 	var err error
 	var result []map[string]interface{}
 
@@ -169,7 +188,7 @@ func GetExternalSubContext(ctx context.Context, url, userAgent, hwid string) ([]
 		return nil, common.NewError("no url")
 	}
 
-	data, err := getExternalLink(ctx, url, userAgent, hwid)
+	data, err := getExternalLink(ctx, url, userAgent, device)
 	if err != nil {
 		return nil, err
 	}

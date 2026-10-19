@@ -21,9 +21,9 @@ const SubscriptionType = "subscription"
 const subscriptionTagPrefix = "__subscription_"
 
 type subscriptionOptions struct {
-	URL            string           `json:"url"`
-	UserAgent      string           `json:"user_agent,omitempty"`
-	HWID           string           `json:"hwid,omitempty"`
+	URL       string `json:"url"`
+	UserAgent string `json:"user_agent,omitempty"`
+	util.SubscriptionDevice
 	Primary        string           `json:"primary"`
 	Backup         string           `json:"backup,omitempty"`
 	UpdateInterval string           `json:"update_interval,omitempty"`
@@ -88,7 +88,7 @@ func prepareSubscription(ctx context.Context, row *model.Outbound) error {
 	if err != nil {
 		return err
 	}
-	nodes, err := util.GetExternalSubContext(ctx, opts.URL, opts.UserAgent, opts.HWID)
+	nodes, err := util.GetExternalSubContext(ctx, opts.URL, opts.UserAgent, opts.SubscriptionDevice)
 	if err != nil {
 		return common.NewError("subscription download or parsing failed; check URL, access and format")
 	}

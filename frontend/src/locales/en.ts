@@ -3,6 +3,7 @@ export default {
     name: 'Subscription', url: 'Subscription URL', userAgent: 'User-Agent',
     hwid: 'HWID (optional)', assignHWID: 'Assign automatically',
     hwidHint: 'Leave empty to omit X-HWID. An automatically assigned UUID is saved and reused on refresh. Changing HWID may count as a new device with your provider.',
+    deviceOS: 'Device OS (optional)', deviceModel: 'Device model (optional)', osVersion: 'OS version (optional)',
     primary: 'Primary server', backup: 'Failover server (optional)', load: 'Load servers',
     updateInterval: 'Subscription refresh interval', durationHint: 'For example 1h or 24h; minimum 1m.',
     probeTarget: 'Health check URL (HTTPS)', probeInterval: 'Health check interval (minimum 5s)',

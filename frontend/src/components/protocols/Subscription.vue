@@ -16,6 +16,15 @@
       <v-text-field v-model="data.hwid" :label="$t('subscriptionOutbound.hwid')" :hint="$t('subscriptionOutbound.hwidHint')" persistent-hint autocomplete="off" :spellcheck="false" clearable @update:model-value="data.hwid = $event || ''" />
       <v-btn class="mt-2" variant="tonal" @click="data.hwid = RandomUtil.randomUUID()">{{ $t('subscriptionOutbound.assignHWID') }}</v-btn>
     </v-col>
+    <v-col cols="12" sm="4">
+      <v-text-field v-model="data.device_os" :label="$t('subscriptionOutbound.deviceOS')" placeholder="Android" hint="X-Device-OS" persistent-hint autocomplete="off" clearable @update:model-value="data.device_os = $event || ''" />
+    </v-col>
+    <v-col cols="12" sm="4">
+      <v-text-field v-model="data.device_model" :label="$t('subscriptionOutbound.deviceModel')" placeholder="Samsung Galaxy S24" hint="X-Device-Model" persistent-hint autocomplete="off" clearable @update:model-value="data.device_model = $event || ''" />
+    </v-col>
+    <v-col cols="12" sm="4">
+      <v-text-field v-model="data.os_version" :label="$t('subscriptionOutbound.osVersion')" placeholder="14" hint="X-Ver-OS" persistent-hint autocomplete="off" clearable @update:model-value="data.os_version = $event || ''" />
+    </v-col>
     <v-col cols="12">
       <v-btn :loading="loading" :disabled="!data.url || loading" variant="tonal" @click="loadServers">{{ $t('subscriptionOutbound.load') }}</v-btn>
     </v-col>
@@ -64,7 +73,7 @@ watch(() => props.data, data => {
   nodes.value = Array.isArray(data.nodes) ? data.nodes : []
   data.failover ??= { enabled: true, interval: '30s', hysteresis: 2 }
 }, { immediate: true })
-watch(() => [props.data, props.data.url, props.data.user_agent, props.data.hwid], (value, previous) => {
+watch(() => [props.data, props.data.url, props.data.user_agent, props.data.hwid, props.data.device_os, props.data.device_model, props.data.os_version], (value, previous) => {
   if (!previous || value[0] !== previous[0]) return
   generation++
   loading.value = false
@@ -92,7 +101,7 @@ async function loadServers() {
   loading.value = true
   error.value = ''
   try {
-    const response = await HttpUtils.post('api/subConvert', { link: data.url, user_agent: data.user_agent || 'sing-box', hwid: data.hwid || '' })
+    const response = await HttpUtils.post('api/subConvert', { link: data.url, user_agent: data.user_agent || 'sing-box', hwid: data.hwid || '', device_os: data.device_os || '', device_model: data.device_model || '', os_version: data.os_version || '' })
     if (generation !== request || props.data !== data) return
     if (!response.success || !Array.isArray(response.obj)) { error.value = t('subscriptionOutbound.loadError'); return }
     nodes.value = response.obj

@@ -10,10 +10,13 @@ import (
 
 func TestSubscriptionHWIDRedirectOrigin(t *testing.T) {
 	t.Setenv("SUI_ALLOW_PRIVATE_SUB_URLS", "true")
-	const hwid = "device-redirect-test"
-	received := make(chan string, 2)
+	headers := map[string]string{
+		"X-HWID": "device-redirect-test", "X-Device-OS": "Android",
+		"X-Device-Model": "Samsung Galaxy S24", "X-Ver-OS": "14",
+	}
+	received := make(chan http.Header, 2)
 	foreign := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		received <- r.Header.Get("X-HWID")
+		received <- r.Header.Clone()
 		if r.URL.Path == "/step" {
 			http.Redirect(w, r, "/final", http.StatusFound)
 			return
@@ -28,7 +31,7 @@ func TestSubscriptionHWIDRedirectOrigin(t *testing.T) {
 		case "/foreign":
 			http.Redirect(w, r, foreign.URL+"/step", http.StatusFound)
 		default:
-			received <- r.Header.Get("X-HWID")
+			received <- r.Header.Clone()
 			_, _ = w.Write([]byte("ok"))
 		}
 	}))
@@ -36,18 +39,20 @@ func TestSubscriptionHWIDRedirectOrigin(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		path string
-		want string
+		keep bool
 		hops int
 	}{
-		{"same origin", "/same", hwid, 1},
-		{"different port and subsequent redirect", "/foreign", "", 2},
+		{"same origin", "/same", true, 1},
+		{"different port and subsequent redirect", "/foreign", false, 2},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, source.URL+tc.path, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
-			req.Header.Set("X-HWID", hwid)
+			for key, value := range headers {
+				req.Header.Set(key, value)
+			}
 			response, err := getExternalHTTPClient().Do(req)
 			if err != nil {
 				t.Fatal(err)
@@ -57,8 +62,15 @@ func TestSubscriptionHWIDRedirectOrigin(t *testing.T) {
 				t.Fatal(err)
 			}
 			for range tc.hops {
-				if got := <-received; got != tc.want {
-					t.Fatalf("redirect disclosed or dropped HWID: got %q, want %q", got, tc.want)
+				got := <-received
+				for key, value := range headers {
+					want := ""
+					if tc.keep {
+						want = value
+					}
+					if got.Get(key) != want {
+						t.Fatalf("redirect disclosed or dropped %s: got %q, want %q", key, got.Get(key), want)
+					}
 				}
 			}
 		})
@@ -67,21 +79,27 @@ func TestSubscriptionHWIDRedirectOrigin(t *testing.T) {
 
 func TestSubscriptionHWIDCanBeEditedAndDisabled(t *testing.T) {
 	t.Setenv("SUI_ALLOW_PRIVATE_SUB_URLS", "true")
-	received := make(chan []string, 1)
+	received := make(chan http.Header, 1)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		received <- r.Header.Values("X-HWID")
+		received <- r.Header.Clone()
 		_, _ = w.Write([]byte(`{"outbounds":[{"type":"socks","tag":"A","server":"one.example","server_port":1080}]}`))
 	}))
 	defer srv.Close()
 	for _, hwid := range []string{"provider-specific-device-id", ""} {
-		nodes, err := GetExternalSubContext(context.Background(), srv.URL, "Happ", hwid)
+		nodes, err := GetExternalSubContext(context.Background(), srv.URL, "Happ", SubscriptionDevice{HWID: hwid})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if nodes[0]["tag"] != "A" {
 			t.Fatalf("unexpected protected subscription: %#v", nodes)
 		}
-		values := <-received
+		headers := <-received
+		for _, key := range []string{"X-Device-OS", "X-Device-Model", "X-Ver-OS"} {
+			if len(headers.Values(key)) != 0 {
+				t.Fatalf("empty device metadata still sent %s", key)
+			}
+		}
+		values := headers.Values("X-HWID")
 		if hwid == "" {
 			if len(values) != 0 {
 				t.Fatalf("empty HWID still sent a header: %#v", values)

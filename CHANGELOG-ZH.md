@@ -4,6 +4,13 @@
 
 这是中文版更新日志。英文版请见 `CHANGELOG-EN.md`，俄文版请见 `CHANGELOG-RU.md`。
 
+## [1.1.2-beta4] - 2026-10-19 - 订阅设备信息
+
+- 订阅出站新增可选的设备系统、设备型号和系统版本字段。例如，`Android`、`Samsung Galaxy S24` 和 `14` 分别通过 `X-Device-OS`、`X-Device-Model` 和 `X-Ver-OS` 发送。
+- 保存的值用于订阅下载和自动刷新，重启后保持不变。空字段不发送对应请求头。修改后需重新加载并选择服务器；重定向到不同主机、端口或 HTTP/HTTPS 协议时，不会转发设备请求头。
+
+配置、升级和回退方法见[发布说明](docs/releases/v1.1.2-beta4.md)。
+
 ## [1.1.2-beta3] - 2026-10-19 - 订阅 HWID
 
 - 订阅出站新增可选的 `X-HWID` 请求头。可手动输入提供商允许使用的 HWID，或点击 Assign automatically 生成可编辑的 UUID，然后重新加载服务器列表并保存出站。

@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-beta4] - 2026-10-19 - subscription device details
+
+- Subscription outbounds now have optional Device OS, Device model and OS version fields. For example, `Android`, `Samsung Galaxy S24` and `14` are sent as `X-Device-OS`, `X-Device-Model` and `X-Ver-OS`.
+- Saved values are reused for downloads and automatic refreshes after a restart. Empty fields omit their headers. After changing device details, reload the list and select the servers again. Redirects to a different host, port or HTTP/HTTPS scheme do not receive device headers.
+
+Setup, upgrade and rollback: [release notes](docs/releases/v1.1.2-beta4.md).
+
 ## [1.1.2-beta3] - 2026-10-19 - subscription HWID
 
 - Subscription outbounds can send an optional `X-HWID` header. Enter a provider-authorized HWID manually or use Assign automatically to generate an editable UUID, then reload the server list and save the outbound.

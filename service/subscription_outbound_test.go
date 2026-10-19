@@ -103,14 +103,14 @@ func TestSubscriptionHWIDPersistsAcrossRefresh(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		value := r.Header.Get("X-HWID")
 		requests <- value
-		if value != hwid {
+		if value != hwid || r.Header.Get("X-Device-OS") != "Android" || r.Header.Get("X-Device-Model") != "Samsung Galaxy S24" || r.Header.Get("X-Ver-OS") != "14" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		_, _ = w.Write([]byte(`{"outbounds":[{"type":"socks","tag":"A","server":"one.example","server_port":1080}]}`))
 	}))
 	defer srv.Close()
-	options, err := json.Marshal(map[string]any{"url": srv.URL, "primary": "A", "hwid": hwid})
+	options, err := json.Marshal(map[string]any{"url": srv.URL, "primary": "A", "hwid": hwid, "device_os": "Android", "device_model": "Samsung Galaxy S24", "os_version": "14"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,8 +140,8 @@ func TestSubscriptionHWIDPersistsAcrossRefresh(t *testing.T) {
 		if err := json.Unmarshal(saved.Options, &stored); err != nil {
 			t.Fatal(err)
 		}
-		if stored["hwid"] != hwid || stored["last_error"] != nil {
-			t.Fatalf("HWID or refresh state lost: %#v", stored)
+		if stored["hwid"] != hwid || stored["device_os"] != "Android" || stored["device_model"] != "Samsung Galaxy S24" || stored["os_version"] != "14" || stored["last_error"] != nil {
+			t.Fatalf("device metadata or refresh state lost: %#v", stored)
 		}
 	}
 	configs, err := (&OutboundService{}).GetAllConfig(db)
@@ -152,7 +152,7 @@ func TestSubscriptionHWIDPersistsAcrossRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(assembled), hwid) {
-		t.Fatal("subscription HWID leaked into core configuration")
+	if strings.Contains(string(assembled), hwid) || strings.Contains(string(assembled), "Samsung Galaxy S24") {
+		t.Fatal("subscription device metadata leaked into core configuration")
 	}
 }
