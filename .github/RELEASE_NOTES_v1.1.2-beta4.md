@@ -35,7 +35,7 @@ The installer preserves the database and configuration. Restarting the service b
 systemctl is-active s-ui
 ```
 
-Windows: extract the ZIP for your architecture and run `install-windows.bat` as Administrator. Docker image: `ghcr.io/deposist/s-ui-x:v1.1.2-beta4`.
+Windows: extract the ZIP for your architecture and run `install-windows.bat` as Administrator. Docker image: `ghcr.io/deposist/s-ui-x-extended:v1.1.2-beta4`.
 
 Beta3 does not send device detail headers. If your provider requires them, subscription downloads can fail after rolling back. Versions before beta3 also lack HWID support. Before rolling back to a version older than beta2, remove Subscription outbounds and update their references, or restore the database backup from before the upgrade: those versions do not recognize this outbound type.
 

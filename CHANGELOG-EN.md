@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-beta5] - 2026-10-19 - Windows ARM64 packaging
+
+- Fixed Windows ARM64 release packaging. Download the ZIP matching your architecture.
+- Corrected Docker installation examples to use `ghcr.io/deposist/s-ui-x-extended:v1.1.2-beta5`.
+- Includes the earlier 1.1.2 betas: Subscription outbounds with a selected primary server, optional failover, editable HWID and device details. Subscription behavior is unchanged from beta4.
+
+Setup, upgrade and rollback: [release notes](docs/releases/v1.1.2-beta5.md).
+
 ## [1.1.2-beta4] - 2026-10-19 - subscription device details
 
 - Subscription outbounds now have optional Device OS, Device model and OS version fields. For example, `Android`, `Samsung Galaxy S24` and `14` are sent as `X-Device-OS`, `X-Device-Model` and `X-Ver-OS`.

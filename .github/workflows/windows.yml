@@ -6,7 +6,7 @@ on:
       tag:
         description: "Release tag"
         required: true
-        default: "v1.1.2-beta4"
+        default: "v1.1.2-beta5"
         type: string
   workflow_call:
     inputs:
@@ -153,7 +153,7 @@ jobs:
           echo "$FILE_INFO"
           case "${{ matrix.arch }}" in
             amd64) grep -q 'PE32+ executable.*x86-64' <<<"$FILE_INFO" ;;
-            arm64) grep -q 'PE32+ executable.*Aarch64' <<<"$FILE_INFO" ;;
+            arm64) grep -Eq 'PE32[+] executable.*(Aarch64|ARM64)' <<<"$FILE_INFO" ;;
             *) echo "unsupported Windows architecture: ${{ matrix.arch }}" >&2; exit 1 ;;
           esac
           if [[ "${{ matrix.arch }}" == amd64 ]]; then
@@ -174,12 +174,12 @@ jobs:
           # hashes together. Fail closed on download error, hash, or PE mismatch.
           case "${{ matrix.arch }}" in
             amd64) CRONET_SHA256="c7434cfa93c3041321dd19111c4de6c52b8a9531a65661ba45425d3c51ec69e2"; PE_ARCH='x86-64' ;;
-            arm64) CRONET_SHA256="fc9e3bae0b326d83092a5de2c04d8b4139dc5c1ba576a035dee4bde780a3c95f"; PE_ARCH='Aarch64' ;;
+            arm64) CRONET_SHA256="fc9e3bae0b326d83092a5de2c04d8b4139dc5c1ba576a035dee4bde780a3c95f"; PE_ARCH='(Aarch64|ARM64)' ;;
             *) echo "no pinned libcronet sha256 for arch ${{ matrix.arch }}" >&2; exit 1 ;;
           esac
           curl --fail --location --silent --show-error -o s-ui-windows/libcronet.dll "${{ env.LIBCRONET_BASE_URL }}/libcronet-windows-${{ matrix.arch }}.dll"
           echo "${CRONET_SHA256}  s-ui-windows/libcronet.dll" | sha256sum --check --strict -
-          file s-ui-windows/libcronet.dll | grep -q "PE32+ executable.*${PE_ARCH}"
+          file s-ui-windows/libcronet.dll | grep -Eq "PE32[+] executable.*${PE_ARCH}"
 
       - name: Package and verify exact archive inventory
         shell: python

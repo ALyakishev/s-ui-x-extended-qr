@@ -4,6 +4,14 @@
 
 这是中文版更新日志。英文版请见 `CHANGELOG-EN.md`，俄文版请见 `CHANGELOG-RU.md`。
 
+## [1.1.2-beta5] - 2026-10-19 - Windows ARM64 安装包
+
+- 修复 Windows ARM64 发布包打包问题。请下载与设备架构对应的 ZIP 文件。
+- 修正 Docker 安装示例，使用 `ghcr.io/deposist/s-ui-x-extended:v1.1.2-beta5`。
+- 包含此前 1.1.2 测试版的订阅出站功能：指定主服务器、可选故障转移、可编辑的 HWID 和设备信息。订阅行为与 beta4 相同。
+
+配置、升级和回退方法见[发布说明](docs/releases/v1.1.2-beta5.md)。
+
 ## [1.1.2-beta4] - 2026-10-19 - 订阅设备信息
 
 - 订阅出站新增可选的设备系统、设备型号和系统版本字段。例如，`Android`、`Samsung Galaxy S24` 和 `14` 分别通过 `X-Device-OS`、`X-Device-Model` 和 `X-Ver-OS` 发送。
