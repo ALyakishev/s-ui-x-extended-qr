@@ -13,6 +13,10 @@
       <v-text-field v-model="data.update_interval" :label="$t('subscriptionOutbound.updateInterval')" :hint="$t('subscriptionOutbound.durationHint')" persistent-hint />
     </v-col>
     <v-col cols="12">
+      <v-text-field v-model="data.hwid" :label="$t('subscriptionOutbound.hwid')" :hint="$t('subscriptionOutbound.hwidHint')" persistent-hint autocomplete="off" :spellcheck="false" clearable @update:model-value="data.hwid = $event || ''" />
+      <v-btn class="mt-2" variant="tonal" @click="data.hwid = RandomUtil.randomUUID()">{{ $t('subscriptionOutbound.assignHWID') }}</v-btn>
+    </v-col>
+    <v-col cols="12">
       <v-btn :loading="loading" :disabled="!data.url || loading" variant="tonal" @click="loadServers">{{ $t('subscriptionOutbound.load') }}</v-btn>
     </v-col>
     <v-col v-if="error || data.last_error" cols="12">
@@ -43,6 +47,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { Outbound } from '@/types/outbounds'
 import HttpUtils from '@/plugins/httputil'
+import RandomUtil from '@/plugins/randomUtil'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ data: Outbound }>()
@@ -59,7 +64,7 @@ watch(() => props.data, data => {
   nodes.value = Array.isArray(data.nodes) ? data.nodes : []
   data.failover ??= { enabled: true, interval: '30s', hysteresis: 2 }
 }, { immediate: true })
-watch(() => [props.data, props.data.url, props.data.user_agent], (value, previous) => {
+watch(() => [props.data, props.data.url, props.data.user_agent, props.data.hwid], (value, previous) => {
   if (!previous || value[0] !== previous[0]) return
   generation++
   loading.value = false
@@ -87,7 +92,7 @@ async function loadServers() {
   loading.value = true
   error.value = ''
   try {
-    const response = await HttpUtils.post('api/subConvert', { link: data.url, user_agent: data.user_agent || 'sing-box' })
+    const response = await HttpUtils.post('api/subConvert', { link: data.url, user_agent: data.user_agent || 'sing-box', hwid: data.hwid || '' })
     if (generation !== request || props.data !== data) return
     if (!response.success || !Array.isArray(response.obj)) { error.value = t('subscriptionOutbound.loadError'); return }
     nodes.value = response.obj

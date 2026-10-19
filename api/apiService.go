@@ -865,7 +865,7 @@ func (a *ApiService) LinkConvert(c *gin.Context) {
 
 func (a *ApiService) SubConvert(c *gin.Context) {
 	link := c.Request.FormValue("link")
-	result, err := util.GetExternalSubContext(c.Request.Context(), link, c.Request.FormValue("user_agent"))
+	result, err := util.GetExternalSubContext(c.Request.Context(), link, c.Request.FormValue("user_agent"), c.Request.FormValue("hwid"))
 	if err != nil {
 		err = common.NewError("subscription download or parsing failed; check URL, access and supported format")
 	}

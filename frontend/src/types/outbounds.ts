@@ -584,7 +584,7 @@ export type Outbound = InterfaceMap[keyof InterfaceMap]
 // Create defaultValues object dynamically
 const defaultValues: Record<OutType, Outbound> = {
   direct: { type: OutTypes.Direct },
-  subscription: { type: OutTypes.Subscription, url: '', user_agent: 'sing-box', primary: '', backup: '', update_interval: '24h', nodes: [], failover: { enabled: true, interval: '30s', hysteresis: 2 } },
+  subscription: { type: OutTypes.Subscription, url: '', user_agent: 'sing-box', hwid: '', primary: '', backup: '', update_interval: '24h', nodes: [], failover: { enabled: true, interval: '30s', hysteresis: 2 } },
   socks: { type: OutTypes.SOCKS, version: "5" },
   http: { type: OutTypes.HTTP, tls: {} },
   shadowsocks: { type: OutTypes.Shadowsocks, method: 'none', multiplex: {} },

@@ -1,13 +1,15 @@
 export default {
   subscriptionOutbound: {
     name: 'Subscription', url: 'Subscription URL', userAgent: 'User-Agent',
+    hwid: 'HWID (optional)', assignHWID: 'Assign automatically',
+    hwidHint: 'Leave empty to omit X-HWID. An automatically assigned UUID is saved and reused on refresh. Changing HWID may count as a new device with your provider.',
     primary: 'Primary server', backup: 'Failover server (optional)', load: 'Load servers',
     updateInterval: 'Subscription refresh interval', durationHint: 'For example 1h or 24h; minimum 1m.',
     probeTarget: 'Health check URL (HTTPS)', probeInterval: 'Health check interval (minimum 5s)',
     hysteresis: 'Successful checks before returning to primary',
     help: 'Happ / Hiddify HTTP(S) subscriptions: share links, base64, sing-box JSON and Clash/Mihomo YAML. Proprietary encrypted links are not supported.',
     refreshHint: 'Servers are pinned by exact unique name. Failed refreshes or missing servers keep the last saved configuration. Failover returns to the recovered primary; no direct fallback is used. Saving applies a core restart.',
-    loadError: 'Could not load servers. Check the URL, User-Agent and subscription format.',
+    loadError: 'Could not load servers. Check the URL, User-Agent, HWID and subscription format.',
     namesError: 'No uniquely named servers found. Duplicate names cannot be selected.',
     selectionRequired: 'Load the subscription and select a primary server and a different optional backup.',
   },

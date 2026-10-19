@@ -98,6 +98,9 @@ func getExternalHTTPClient() *http.Client {
 				if len(via) >= 10 {
 					return common.NewError("too many redirects")
 				}
+				if !strings.EqualFold(req.URL.Scheme, via[0].URL.Scheme) || !strings.EqualFold(req.URL.Host, via[0].URL.Host) {
+					req.Header.Del("X-HWID")
+				}
 				return validateExternalURL(req.URL.String())
 			},
 		}
@@ -106,10 +109,10 @@ func getExternalHTTPClient() *http.Client {
 }
 
 func GetExternalLink(rawURL string) (string, error) {
-	return getExternalLink(context.Background(), rawURL, "")
+	return getExternalLink(context.Background(), rawURL, "", "")
 }
 
-func getExternalLink(ctx context.Context, rawURL, userAgent string) (string, error) {
+func getExternalLink(ctx context.Context, rawURL, userAgent, hwid string) (string, error) {
 	rawURL = subscriptionURL(rawURL)
 	if err := validateExternalURL(rawURL); err != nil {
 		return "", common.NewError("invalid or blocked subscription URL")
@@ -121,6 +124,9 @@ func getExternalLink(ctx context.Context, rawURL, userAgent string) (string, err
 	}
 	if userAgent != "" {
 		req.Header.Set("User-Agent", userAgent)
+	}
+	if hwid != "" {
+		req.Header.Set("X-HWID", hwid)
 	}
 	response, err := getExternalHTTPClient().Do(req)
 	if err != nil {
@@ -152,10 +158,10 @@ func GetExternalSub(url string) ([]map[string]interface{}, error) {
 }
 
 func GetExternalSubWithUserAgent(rawURL, userAgent string) ([]map[string]interface{}, error) {
-	return GetExternalSubContext(context.Background(), rawURL, userAgent)
+	return GetExternalSubContext(context.Background(), rawURL, userAgent, "")
 }
 
-func GetExternalSubContext(ctx context.Context, url, userAgent string) ([]map[string]interface{}, error) {
+func GetExternalSubContext(ctx context.Context, url, userAgent, hwid string) ([]map[string]interface{}, error) {
 	var err error
 	var result []map[string]interface{}
 
@@ -163,7 +169,7 @@ func GetExternalSubContext(ctx context.Context, url, userAgent string) ([]map[st
 		return nil, common.NewError("no url")
 	}
 
-	data, err := getExternalLink(ctx, url, userAgent)
+	data, err := getExternalLink(ctx, url, userAgent, hwid)
 	if err != nil {
 		return nil, err
 	}

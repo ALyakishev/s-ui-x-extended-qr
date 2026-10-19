@@ -94,3 +94,65 @@ func TestSubscriptionRejectsAmbiguousAndUnsafeNodes(t *testing.T) {
 		})
 	}
 }
+
+func TestSubscriptionHWIDPersistsAcrossRefresh(t *testing.T) {
+	initSettingTestDB(t)
+	t.Setenv("SUI_ALLOW_PRIVATE_SUB_URLS", "true")
+	const hwid = "f8d88d1c-3020-4e5a-bf5c-390335104958"
+	requests := make(chan string, 3)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		value := r.Header.Get("X-HWID")
+		requests <- value
+		if value != hwid {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"outbounds":[{"type":"socks","tag":"A","server":"one.example","server_port":1080}]}`))
+	}))
+	defer srv.Close()
+	options, err := json.Marshal(map[string]any{"url": srv.URL, "primary": "A", "hwid": hwid})
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := model.Outbound{Type: SubscriptionType, Tag: "hwid-subscription", Options: options}
+	if err := prepareSubscription(context.Background(), &row); err != nil {
+		t.Fatalf("HWID-protected subscription rejected: %v; received HWID %q", err, <-requests)
+	}
+	if got := <-requests; got != hwid {
+		t.Fatalf("initial HWID = %q", got)
+	}
+	db := database.GetDB()
+	if err := db.Create(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		if err := (&ConfigService{}).RefreshSubscriptions(context.Background(), true); err != nil {
+			t.Fatal(err)
+		}
+		if got := <-requests; got != hwid {
+			t.Fatalf("refresh HWID = %q", got)
+		}
+		var saved model.Outbound
+		if err := db.First(&saved, row.Id).Error; err != nil {
+			t.Fatal(err)
+		}
+		var stored map[string]any
+		if err := json.Unmarshal(saved.Options, &stored); err != nil {
+			t.Fatal(err)
+		}
+		if stored["hwid"] != hwid || stored["last_error"] != nil {
+			t.Fatalf("HWID or refresh state lost: %#v", stored)
+		}
+	}
+	configs, err := (&OutboundService{}).GetAllConfig(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assembled, err := json.Marshal(configs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(assembled), hwid) {
+		t.Fatal("subscription HWID leaked into core configuration")
+	}
+}

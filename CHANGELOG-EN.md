@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-beta3] - 2026-10-19 - subscription HWID
+
+- Subscription outbounds can send an optional `X-HWID` header. Enter a provider-authorized HWID manually or use Assign automatically to generate an editable UUID, then reload the server list and save the outbound.
+- The saved identifier is reused for server-list downloads and scheduled subscription refreshes. Clearing the field disables the header. Changing HWID requires reloading and reselecting servers and may count as a new device with the provider.
+- Subscription requests do not forward HWID to a different site or port, or when the redirect changes HTTP/HTTPS. This change does not add support for Xray JSON subscriptions.
+
+Usage, upgrade and rollback: [release notes](docs/releases/v1.1.2-beta3.md).
+
 ## [1.1.2-beta2] - 2026-10-19 - subscription outbounds
 
 - Added the Subscription outbound type. Load a subscription and choose a specific primary server, with an optional backup from the same subscription. Routing rules and selectors use the outbound's tag.
