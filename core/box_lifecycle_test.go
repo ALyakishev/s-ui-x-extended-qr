@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
 )
@@ -27,14 +28,21 @@ func (f *lifecycleTestLogFactory) NewLogger(string) log.ContextLogger {
 	return log.NewNOPFactory().Logger()
 }
 
+func newLifecycleTestBox(factory log.Factory) *Box {
+	logger := factory.Logger()
+	return &Box{
+		ctx:        context.Background(),
+		logFactory: factory,
+		logger:     logger,
+		scope:      adapter.NewScope(context.Background(), logger),
+		done:       make(chan struct{}),
+	}
+}
+
 func TestBoxStartRollsBackWhenLoggerStartFails(t *testing.T) {
 	startErr := errors.New("start failed")
 	factory := &lifecycleTestLogFactory{startErr: startErr}
-	box := &Box{
-		logFactory: factory,
-		logger:     factory.Logger(),
-		done:       make(chan struct{}),
-	}
+	box := newLifecycleTestBox(factory)
 
 	if err := box.Start(); err == nil || !strings.Contains(err.Error(), startErr.Error()) {
 		t.Fatalf("Start() error = %v, want message containing %q", err, startErr)
@@ -51,11 +59,7 @@ func TestBoxStartRollsBackWhenLoggerStartFails(t *testing.T) {
 
 func TestBoxCloseIsConcurrentSafe(t *testing.T) {
 	factory := &lifecycleTestLogFactory{}
-	box := &Box{
-		logFactory: factory,
-		logger:     factory.Logger(),
-		done:       make(chan struct{}),
-	}
+	box := newLifecycleTestBox(factory)
 	const callers = 16
 	var wg sync.WaitGroup
 	wg.Add(callers)

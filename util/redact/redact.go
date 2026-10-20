@@ -42,6 +42,13 @@ var sensitiveValuePatterns = []struct {
 		replacement: `${1}` + Marker + `@`,
 	},
 	{
+		// Same credentials without a scheme (e.g. "dial user:pass@host:443").
+		// The separator character class excludes '%' and '!' so a percent- or
+		// bang-encoded literal ("100% sure: no@") is not mistaken for a password.
+		pattern:     regexp.MustCompile(`\b([^\s:@/?#%!]+):([^\s@/?#%!]{2,})@`),
+		replacement: Marker + `@`,
+	},
+	{
 		pattern:     regexp.MustCompile(`(?i)(\bAuthorization\s*:\s*Bearer\s+)[^\s,;]+`),
 		replacement: `${1}` + Marker,
 	},

@@ -17,32 +17,6 @@ import (
 	"github.com/sagernet/sing/service/filemanager"
 )
 
-type PlatformWriter struct{}
-
-func (p PlatformWriter) DisableColors() bool {
-	return true
-}
-func (p PlatformWriter) WriteMessage(level log.Level, message string) {
-	switch level {
-	case log.LevelInfo:
-		suiLog.CoreInfo(message)
-	case log.LevelNotice:
-		suiLog.CoreInfo(message)
-	case log.LevelWarn:
-		suiLog.CoreWarning(message)
-	case log.LevelPanic:
-		suiLog.CoreError(message)
-		panic(message)
-	case log.LevelFatal:
-		suiLog.CoreError(message)
-		os.Exit(1)
-	case log.LevelError:
-		suiLog.CoreError(message)
-	default:
-		suiLog.CoreDebug(message)
-	}
-}
-
 func NewFactory(options log.Options) (log.Factory, error) {
 	logOptions := options.Options
 
@@ -174,9 +148,10 @@ func (f *defaultFactory) UnSubscribe(sub observable.Subscription[log.Entry]) {
 	f.observer.UnSubscribe(sub)
 }
 
-// AttachPlatformWriter is a no-op: the panel is a server daemon and never
-// supplies a mobile-style platform log writer.
-func (f *defaultFactory) AttachPlatformWriter(writer log.PlatformWriter) {
+// AttachPlatformWriter is required by log.Factory. The panel runs the core
+// in-process and consumes its logs through Subscribe, so there is no
+// mobile-style platform writer to forward to; the call is accepted and ignored.
+func (f *defaultFactory) AttachPlatformWriter(log.PlatformWriter) {
 }
 
 type observableLogger struct {
@@ -222,6 +197,9 @@ func (l *observableLogger) Log(ctx context.Context, level log.Level, args []any)
 	default:
 		suiLog.CoreDebug(l.tag, msg)
 	}
+	// Forward the formatted line to the configured writer. os.Stderr is skipped
+	// because suiLog's own stream backend already prints there; every other
+	// destination (log file, and the buffer tests capture into) is new.
 	if (l.filePath != "" || l.writer != os.Stderr) && l.writer != nil {
 		_, _ = l.writer.Write([]byte(message))
 	}

@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-beta7] - 2026-10-20 - sing-box 1.14.3
+
+- Updated the core to sing-box-extended `v1.14.3-extended-2.7.8`. Core startup follows the new launch order; NTP, the reference manager and the HTTP client now stop with the core.
+- TrustTunnel and MASQUE forms gain the `disable_path_mtu_discovery`, `handshake_timeout` and `use_l4_proxy` fields.
+- The outbound URL validator no longer rejects punycode domains. The log redactor strips credentials from schemeless strings such as `user:pass@host`.
+
+Back up the database before upgrading. Setup, upgrade and rollback: [release notes](docs/releases/v1.1.2-beta7.md).
+
 ## [1.1.2-beta6] - 2026-10-20 - sing-box 1.14.1
 
 - Updated the core to sing-box 1.14.1 with the extended protocols. AmneziaWG 3.1 options and live WireGuard peer management remain available.

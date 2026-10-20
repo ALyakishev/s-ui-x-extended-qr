@@ -363,6 +363,7 @@ export interface TrustTunnel extends InboundBasics {
   network?: string[]
   congestion_controller?: string
   cwnd?: number
+  disable_path_mtu_discovery?: boolean
 }
 export interface SSH extends InboundBasics {
   host_key?: string[]

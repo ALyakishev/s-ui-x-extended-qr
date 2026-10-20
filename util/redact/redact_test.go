@@ -161,6 +161,10 @@ func TestStringRedactsURLUserinfo(t *testing.T) {
 		"dial socks5://user:pass@10.0.0.1:1080 failed": "dial socks5://" + Marker + "@10.0.0.1:1080 failed",
 		"http://admin:s3cr3t@proxy.local:3128/path":    "http://" + Marker + "@proxy.local:3128/path",
 		"https://plain.example.com:8443/no-creds":      "https://plain.example.com:8443/no-creds",
+		// Same credentials without a scheme.
+		"dial user:pass@host:443 failed": "dial " + Marker + "@host:443 failed",
+		// A lone userinfo (no colon) is not a password and keeps its shape.
+		"https://user@host/path": "https://user@host/path",
 	}
 	for input, want := range tests {
 		t.Run(input, func(t *testing.T) {

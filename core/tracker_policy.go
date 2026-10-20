@@ -4,7 +4,7 @@ import "strings"
 
 const (
 	TrackerValidatedSingBoxModule  = "github.com/sagernet/sing-box"
-	TrackerValidatedSingBoxVersion = "v1.14.1"
+	TrackerValidatedSingBoxVersion = "v1.14.3"
 	TrackerRevalidationPolicyDoc   = "docs/sing-box-tracker-revalidation.md"
 )
 

@@ -4,6 +4,14 @@
 
 这是中文版更新日志。英文版请见 `CHANGELOG-EN.md`，俄文版请见 `CHANGELOG-RU.md`。
 
+## [1.1.2-beta7] - 2026-10-20 - sing-box 1.14.3
+
+- 内核更新至 sing-box-extended `v1.14.3-extended-2.7.8`。内核启动顺序已按新版本调整，NTP、引用管理器和 HTTP 客户端随内核一同停止。
+- TrustTunnel 和 MASQUE 表单新增 `disable_path_mtu_discovery`、`handshake_timeout` 和 `use_l4_proxy` 字段。
+- 出站 URL 校验不再拒绝 punycode 域名。日志脱敏现在也会移除无协议字符串中的账号密码，例如 `user:pass@host`。
+
+升级前请备份数据库。配置、升级和回退方法见[发布说明](docs/releases/v1.1.2-beta7.md)。
+
 ## [1.1.2-beta6] - 2026-10-20 - sing-box 1.14.1
 
 - 内核更新至 sing-box 1.14.1，保留扩展协议、AmneziaWG 3.1 选项及无需重启内核的 WireGuard 对等节点管理。

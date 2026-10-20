@@ -50,6 +50,38 @@ func TestValidateOutboundURLAllowsPublicTargetsAndProxySchemes(t *testing.T) {
 	}
 }
 
+// TestValidateHostnameTLD pins the TLD rule: a real suffix is required, IDN
+// domains in their punycode form must pass, and a bare single label or an
+// all-numeric suffix must not.
+func TestValidateHostnameTLD(t *testing.T) {
+	accepted := []string{
+		"example.com",
+		"a.io",
+		"xn--p1ai.xn--p1ai", // punycode on both sides
+		"xn--e1afmkfd.xn--p1ai",
+	}
+	for _, host := range accepted {
+		t.Run("accept/"+host, func(t *testing.T) {
+			if err := validateHostname(host); err != nil {
+				t.Fatalf("expected hostname to be accepted: %v", err)
+			}
+		})
+	}
+
+	rejected := []string{
+		"example",   // no TLD at all
+		"host.123",  // numeric-only suffix
+		"host..com", // empty label
+	}
+	for _, host := range rejected {
+		t.Run("reject/"+host, func(t *testing.T) {
+			if err := validateHostname(host); err == nil {
+				t.Fatal("expected hostname to be rejected")
+			}
+		})
+	}
+}
+
 func TestValidateOutboundURLHonorsSchemeAllowlist(t *testing.T) {
 	if err := ValidateOutboundURL(context.Background(), "http://8.8.8.8/test", "https"); err == nil {
 		t.Fatal("expected HTTP URL to be rejected by HTTPS-only allowlist")

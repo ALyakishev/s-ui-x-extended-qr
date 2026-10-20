@@ -347,6 +347,7 @@ export interface TrustTunnel extends OutboundBasics, Dial {
   quic?: boolean
   congestion_controller?: string
   cwnd?: number
+  disable_path_mtu_discovery?: boolean
   multiplex?: {
     enabled?: boolean
     max_connections?: number
@@ -390,6 +391,8 @@ export interface MASQUE extends OutboundBasics, Dial {
   reconnect_delay?: string
   congestion_controller?: string
   cwnd?: number
+  handshake_timeout?: string
+  use_l4_proxy?: boolean
   tls?: MasqueTls
 }
 

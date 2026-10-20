@@ -136,14 +136,23 @@ func validateHostname(host string) error {
 			}
 		}
 	}
+	// The TLD must contain at least one letter. Punycode labels ("xn--p1ai")
+	// mix letters and digits, so a letters-only rule would reject every IDN
+	// domain while adding no protection: the label charset was already checked
+	// above, and IP literals were handled by netip.ParseAddr.
 	tld := labels[len(labels)-1]
 	if len(tld) < 2 || len(tld) > 63 {
 		return common.NewError("invalid url TLD")
 	}
+	hasLetter := false
 	for _, r := range tld {
-		if !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z') {
-			return common.NewError("invalid url TLD")
+		if r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' {
+			hasLetter = true
+			break
 		}
+	}
+	if !hasLetter {
+		return common.NewError("invalid url TLD")
 	}
 	return nil
 }
