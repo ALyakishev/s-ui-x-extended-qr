@@ -11,7 +11,7 @@ FROM golang:1.26.9-alpine@sha256:3082400e369fa24d5fc60bca20edab3f6d604e0c5a690ec
 WORKDIR /app
 ARG TARGETARCH
 ARG TARGETVARIANT
-ARG CRONET_GO_VERSION=2faf34666c2cc8234f10f2ab6d4c4d6104d34ae2
+ARG CRONET_GO_VERSION=0d28acc44093df24b2526dea3d6ffefd6b0a54f0
 # Immutable cronet-go release tag for the prebuilt native library (decoupled from
 # the source pin upstream; kept in sync manually). Pinning the tag + verifying the
 # sha256 replaces the mutable releases/latest fetch.

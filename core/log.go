@@ -194,7 +194,16 @@ func (l *observableLogger) Log(ctx context.Context, level log.Level, args []any)
 	}
 	msg := F.ToString(args...)
 	now := time.Now()
-	message, messageSimple := l.formatter.FormatWithSimple(ctx, level, l.tag, msg, now)
+	message := l.formatter.Format(ctx, level, l.tag, msg, now)
+	messageSimple := msg
+	if l.tag != "" {
+		messageSimple = l.tag + ": " + messageSimple
+	}
+	if ctx != nil {
+		if id, ok := log.IDFromContext(ctx); ok {
+			messageSimple = F.ToString("[", id.ID, " ", log.FormatDuration(time.Since(id.CreatedAt)), "] ", messageSimple)
+		}
+	}
 	switch level {
 	case log.LevelInfo:
 		suiLog.CoreInfo(l.tag, msg)

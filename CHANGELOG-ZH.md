@@ -4,6 +4,14 @@
 
 这是中文版更新日志。英文版请见 `CHANGELOG-EN.md`，俄文版请见 `CHANGELOG-RU.md`。
 
+## [1.1.2-beta6] - 2026-10-20 - sing-box 1.14.1
+
+- 内核更新至 sing-box 1.14.1，保留扩展协议、AmneziaWG 3.1 选项及无需重启内核的 WireGuard 对等节点管理。
+- 适配新内核的 Clash API 模式管理和日志接口。
+- 包含此前 1.1.2 测试版的订阅出站功能及 Windows ARM64 打包修复。
+
+升级前请备份数据库。配置、升级和回退方法见[发布说明](docs/releases/v1.1.2-beta6.md)。
+
 ## [1.1.2-beta5] - 2026-10-19 - Windows ARM64 安装包
 
 - 修复 Windows ARM64 发布包打包问题。请下载与设备架构对应的 ZIP 文件。

@@ -2,22 +2,20 @@
 
 Validated dependency:
 
-- `github.com/sagernet/sing-box v1.13.14`
+- `github.com/sagernet/sing-box v1.14.1`
 
-> Note: `go.mod` keeps `require v1.13.14` but `replace`s it with the
-> shtorm-7/sing-box-extended fork (`v1.13.14-extended-2.5.0`). The fork
-> preserves the upstream module path so all imports remain
-> `github.com/sagernet/sing-box/...`.
+The module is provided by `github.com/deposist/sing-box-extended
+v1.14.1-extended-2.7.6`, which preserves the upstream import paths.
 
-The local `ConnTracker` and `StatsTracker` wrap sing-box routed TCP and packet
-connections. Any bump of `github.com/sagernet/sing-box` must revalidate this
-contract before merge. `go test ./core` enforces that this document and
-`core/tracker_policy.go` are updated when the sing-box version changes.
+`ConnTracker` and `StatsTracker` track routed TCP connections, packet connections
+and sing-tun flows. Their behavioral tests cover traffic accounting, close and
+reset handling. Revalidate these contracts when updating the core.
 
 Required checks:
 
 - RoutedConnection signature still matches sing-box adapter.RouterConnectionTracker
 - RoutedPacketConnection signature still matches sing-box adapter.RouterConnectionTracker
+- RoutedFlow accounts both directions and releases tracked flows on Close and Reset
 - wrapped TCP connections always call Done exactly once on Close or terminal I/O error
 - wrapped packet connections always call Done exactly once on Close or terminal I/O error
 - Reset closes tracked connections and waits for active wrappers before replacing tracker state

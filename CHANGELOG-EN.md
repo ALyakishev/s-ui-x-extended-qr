@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-beta6] - 2026-10-20 - sing-box 1.14.1
+
+- Updated the core to sing-box 1.14.1 with the extended protocols. AmneziaWG 3.1 options and live WireGuard peer management remain available.
+- Adapted Clash API mode handling and core log output to the new core interfaces.
+- Includes the Subscription outbound features and Windows ARM64 packaging fix from the earlier 1.1.2 betas.
+
+Back up the database before upgrading. Setup, upgrade and rollback: [release notes](docs/releases/v1.1.2-beta6.md).
+
 ## [1.1.2-beta5] - 2026-10-19 - Windows ARM64 packaging
 
 - Fixed Windows ARM64 release packaging. Download the ZIP matching your architecture.

@@ -4,13 +4,14 @@ import "strings"
 
 const (
 	TrackerValidatedSingBoxModule  = "github.com/sagernet/sing-box"
-	TrackerValidatedSingBoxVersion = "v1.13.14"
+	TrackerValidatedSingBoxVersion = "v1.14.1"
 	TrackerRevalidationPolicyDoc   = "docs/sing-box-tracker-revalidation.md"
 )
 
 var TrackerRevalidationChecks = []string{
 	"RoutedConnection signature still matches sing-box adapter.RouterConnectionTracker",
 	"RoutedPacketConnection signature still matches sing-box adapter.RouterConnectionTracker",
+	"RoutedFlow accounts both directions and releases tracked flows on Close and Reset",
 	"wrapped TCP connections always call Done exactly once on Close or terminal I/O error",
 	"wrapped packet connections always call Done exactly once on Close or terminal I/O error",
 	"Reset closes tracked connections and waits for active wrappers before replacing tracker state",

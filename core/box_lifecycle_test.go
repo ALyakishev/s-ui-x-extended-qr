@@ -17,11 +17,12 @@ type lifecycleTestLogFactory struct {
 	closeCalls atomic.Int32
 }
 
-func (f *lifecycleTestLogFactory) Start() error              { return f.startErr }
-func (f *lifecycleTestLogFactory) Close() error              { f.closeCalls.Add(1); return nil }
-func (f *lifecycleTestLogFactory) Level() log.Level          { return log.LevelTrace }
-func (f *lifecycleTestLogFactory) SetLevel(log.Level)        {}
-func (f *lifecycleTestLogFactory) Logger() log.ContextLogger { return log.NewNOPFactory().Logger() }
+func (f *lifecycleTestLogFactory) Start() error                            { return f.startErr }
+func (f *lifecycleTestLogFactory) Close() error                            { f.closeCalls.Add(1); return nil }
+func (f *lifecycleTestLogFactory) Level() log.Level                        { return log.LevelTrace }
+func (f *lifecycleTestLogFactory) SetLevel(log.Level)                      {}
+func (f *lifecycleTestLogFactory) Logger() log.ContextLogger               { return log.NewNOPFactory().Logger() }
+func (f *lifecycleTestLogFactory) AttachPlatformWriter(log.PlatformWriter) {}
 func (f *lifecycleTestLogFactory) NewLogger(string) log.ContextLogger {
 	return log.NewNOPFactory().Logger()
 }

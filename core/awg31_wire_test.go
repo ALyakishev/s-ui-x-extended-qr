@@ -4,21 +4,9 @@
 //
 //	go test -tags="integration with_wireguard with_gvisor" ./core -run TestAWG31RandomTrailersHandshakeWire
 //
-// This is a RED regression test pinning a known wire-format bug in the pinned
-// engine dependency shtorm-7/wireguard-go v0.0.5-extended-1.6.1 (used by
-// sing-box-extended v1.14.0-extended-2.7.5). It is expected to FAIL until the
-// engine pin is fixed; it is never run by CI (integration tag).
-//
-// Bug: with random_trailers=true, SendHandshakeInitiation/SendHandshakeResponse
-// pass a slice of len(MessageSize+trailerLen) into msg.marshal, which strictly
-// requires len == MessageSize and returns errMessageLengthMismatch. The fork
-// discards that error (`_ = msg.marshal(packet)`), so the handshake message
-// body is never written: the wire packet carries padding + ZEROS + random
-// trailer, MAC1/MAC2 land inside the trailer region, and the peer cannot even
-// classify the packet (type field is 0, outside every H1-H4 range). Handshakes
-// fail silently in both directions -> clients hang in "connecting" forever.
-// The upstream amnezia-vpn/amneziawg-go client engine (AmneziaVPN >= 5.0.1.5)
-// implements random trailers correctly, so the mismatch is server-side only.
+// Verifies that AmneziaWG 3.1 handshake packets retain a valid H1 type when
+// random trailers are enabled. Passing a trailer-extended slice to the strict
+// handshake marshaler leaves the body unwritten and the type field at zero.
 package core
 
 import (
