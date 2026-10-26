@@ -179,3 +179,45 @@ func TestTrustTunnelFallbackAndMissingConfiguration(t *testing.T) {
 		}
 	}
 }
+
+// Exercise a separately selected TLS row, not a preassembled addr.tls map.
+// prepareTls historically drops the row when Client is absent, or overwrites
+// a client-side SNI with an empty server-side value.
+func TestTrustTunnelSelectedTLSHostname(t *testing.T) {
+	for _, tc := range []struct {
+		name, serverTLS, clientTLS, addrs, hostname, address string
+	}{
+		{"server SNI", `{"enabled":true,"server_name":"tls.example"}`, `{}`, `[{"server":"192.0.2.1","server_port":8443}]`, "tls.example", "192.0.2.1:8443"},
+		{"absent client blob", `{"enabled":true,"server_name":"tls.example"}`, ``, `[{"server":"192.0.2.1","server_port":8443}]`, "tls.example", "192.0.2.1:8443"},
+		{"null client blob", `{"enabled":true,"server_name":"tls.example"}`, `null`, `[{"server":"192.0.2.1","server_port":8443}]`, "tls.example", "192.0.2.1:8443"},
+		{"empty server SNI", `{"enabled":true,"server_name":""}`, `{"server_name":"client.example"}`, `[{"server":"192.0.2.1","server_port":8443}]`, "client.example", "192.0.2.1:8443"},
+		{"server SNI priority", `{"enabled":true,"server_name":"tls.example"}`, `{"server_name":"client.example"}`, `[{"server":"192.0.2.1","server_port":8443}]`, "tls.example", "192.0.2.1:8443"},
+		{"address override", `{"enabled":true,"server_name":"tls.example"}`, ``, `[{"server":"2001:db8::1","server_port":10443,"tls":{"server_name":"override.example"}}]`, "override.example", "[2001:db8::1]:10443"},
+		{"explicit empty override", `{"enabled":true,"server_name":"tls.example"}`, `{}`, `[{"server":"192.0.2.1","server_port":8443,"tls":{"server_name":""}}]`, "192.0.2.1", "192.0.2.1:8443"},
+		{"unrelated address override", `{"enabled":true,"server_name":"tls.example"}`, ``, `[{"server":"192.0.2.1","server_port":8443,"tls":{"insecure":true}}]`, "tls.example", "192.0.2.1:8443"},
+		{"no hostname", `{"enabled":true}`, `{}`, `[{"server":"192.0.2.1","server_port":8443}]`, "192.0.2.1", "192.0.2.1:8443"},
+		{"implicit address", `{"enabled":true,"server_name":"tls.example"}`, ``, `[]`, "tls.example", "192.0.2.1:9443"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			in := ttInbound()
+			in.Tls = &model.Tls{Id: 7, Name: "display label is not SNI", Server: json.RawMessage(tc.serverTLS), Client: json.RawMessage(tc.clientTLS)}
+			in.TlsId = in.Tls.Id
+			in.Addrs = json.RawMessage(tc.addrs)
+			beforeServer, beforeClient, beforeAddrs := string(in.Tls.Server), string(in.Tls.Client), string(in.Addrs)
+			links := LinkGenerator(json.RawMessage(`{"trusttunnel":{"name":"alice","password":"synthetic-password"}}`), in, "192.0.2.1")
+			if len(links) != 1 {
+				t.Fatalf("expected one link, got %d", len(links))
+			}
+			fields := decodeTT(t, links[0])
+			if fields[1] != tc.hostname {
+				t.Errorf("TLS hostname = %q, want %q", fields[1], tc.hostname)
+			}
+			if fields[2] != tc.address {
+				t.Errorf("connection address = %q, want %q", fields[2], tc.address)
+			}
+			if string(in.Tls.Server) != beforeServer || string(in.Tls.Client) != beforeClient || string(in.Addrs) != beforeAddrs {
+				t.Fatal("source TLS/address data mutated")
+			}
+		})
+	}
+}

@@ -3,12 +3,41 @@ package util
 import (
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math"
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/deposist/s-ui-x-extended/database/model"
 )
+
+// prepareTrustTunnelTLS preserves an explicit SNI from the selected TLS row.
+// The shared prepareTls may discard it when the optional Client JSON is absent,
+// or replace a client SNI with an empty server value. Keep that legacy behavior
+// for other protocols; only repair the native TrustTunnel delivery map here.
+// Run before merging address TLS so explicit per-address overrides still win,
+// including an empty server_name that requests the advertised-host fallback.
+func prepareTrustTunnelTLS(t *model.Tls, merged map[string]interface{}) map[string]interface{} {
+	if t == nil {
+		return merged
+	}
+	for _, raw := range []json.RawMessage{t.Server, t.Client} {
+		var config struct {
+			ServerName string `json:"server_name"`
+		}
+		if json.Unmarshal(raw, &config) != nil || strings.TrimSpace(config.ServerName) == "" {
+			continue
+		}
+		if merged == nil {
+			merged = make(map[string]interface{})
+		}
+		merged["server_name"] = config.ServerName
+		break
+	}
+	return merged
+}
 
 // appendTrustTunnelVarint implements the 1/2/4-byte QUIC-style integers used
 // by TrustTunnel links. The format does not support the 8-byte QUIC form.

@@ -69,6 +69,9 @@ func LinkGenerator(clientConfig json.RawMessage, i *model.Inbound, hostname stri
 	var tls map[string]interface{}
 	if i.TlsId > 0 {
 		tls = prepareTls(i.Tls)
+		if i.Type == "trusttunnel" {
+			tls = prepareTrustTunnelTLS(i.Tls, tls)
+		}
 	}
 
 	var userConfig map[string]map[string]interface{}
