@@ -192,7 +192,7 @@
       "type": "trusttunnel",
       "hasUsers": true,
       "userField": "trusttunnel",
-      "clientDelivery": "uri",
+      "clientDelivery": "json",
       "linkScheme": "tt",
       "outJsonBuilder": "trusttunnel",
       "hasInData": true,

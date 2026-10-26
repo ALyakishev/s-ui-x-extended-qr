@@ -52,6 +52,22 @@ func TestManifestDeliveryIsImplemented(t *testing.T) {
 				}
 			})
 		}
+		// JSON is the existing delivery/API contract. A link scheme can add
+		// native delivery independently, and must not escape generator coverage.
+		if in.ClientDelivery == "json" && in.LinkScheme != "" {
+			t.Run("json+link/"+in.Type, func(t *testing.T) {
+				prefixes := linkSchemePrefixes[in.Type]
+				links := LinkGenerator(cfg, wellFormedInbound(in.Type), "example.com")
+				if len(prefixes) == 0 || len(links) == 0 {
+					t.Fatal("additive JSON/link capability has no tested link generator")
+				}
+				for _, link := range links {
+					if !hasAnyPrefix(link, prefixes) {
+						t.Fatal("additive link generator returned an unexpected scheme")
+					}
+				}
+			})
+		}
 	}
 }
 

@@ -58,6 +58,10 @@ func (s *LinkService) addClientInfo(uri string, clientInfo string) string {
 		return uri
 	}
 	switch protocol[0] {
+	case "tt":
+		// Native TrustTunnel stores the remark inside its binary TLV payload.
+		// Appending display text would corrupt the unpadded Base64url data.
+		return uri
 	case "vmess":
 		var vmessJson map[string]interface{}
 		config, err := util.B64StrToByte(protocol[1])

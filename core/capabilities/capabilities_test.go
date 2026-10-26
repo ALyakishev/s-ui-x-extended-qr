@@ -96,6 +96,26 @@ func TestInboundTypesWithLinkMatchesLegacySet(t *testing.T) {
 	}
 }
 
+func TestTrustTunnelJSONAndLinkCapabilities(t *testing.T) {
+	found := false
+	for _, in := range Inbounds() {
+		if in.Type == "trusttunnel" {
+			found = true
+			if in.ClientDelivery != "json" || in.LinkScheme != "tt" || in.OutJSONBuilder != "trusttunnel" {
+				t.Fatal("TrustTunnel must retain JSON delivery and add native links independently")
+			}
+		}
+	}
+	if !found {
+		t.Fatal("TrustTunnel capability missing")
+	}
+	for _, in := range BuildAPIView().Inbounds {
+		if in.Type == "trusttunnel" && in.ClientDelivery != "json" {
+			t.Fatal("capabilities API changed existing TrustTunnel delivery metadata")
+		}
+	}
+}
+
 // TestAllowedFieldsAreExactlyUserFieldValues locks the defence-in-depth property:
 // the SQL field allow-list is precisely the set of declared user-field values.
 func TestAllowedFieldsAreExactlyUserFieldValues(t *testing.T) {

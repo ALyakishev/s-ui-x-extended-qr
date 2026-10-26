@@ -303,10 +303,12 @@ func AssignableKeylessTypes() map[string]struct{} {
 // InboundTypesWithLink derives the ordered list of inbound types that produce an
 // external link (URI or Telegram), formerly util.InboundTypeWithLink. Order is
 // manifest order; all consumers use it as a set (SQL IN, test iteration).
+// LinkScheme also allows additive URI delivery for a JSON-delivered protocol,
+// without changing its existing ClientDelivery value in the capabilities API.
 func InboundTypesWithLink() []string {
 	var out []string
 	for _, in := range loaded.Inbounds {
-		if in.ClientDelivery == "uri" || in.ClientDelivery == "telegram" {
+		if in.LinkScheme != "" || in.ClientDelivery == "uri" || in.ClientDelivery == "telegram" {
 			out = append(out, in.Type)
 		}
 	}

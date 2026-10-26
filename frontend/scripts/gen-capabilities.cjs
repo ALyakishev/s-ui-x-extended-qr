@@ -67,7 +67,7 @@ function derive(manifest) {
     // subscription, so a link-based subscription (Hiddify, raw links) cannot
     // carry them. Derived, like the clash list, so the panel note cannot drift.
     noLinkInboundTypes: pick(
-      (i) => i.clientDelivery !== 'none' && i.clientDelivery !== 'uri' && i.clientDelivery !== 'telegram',
+      (i) => !i.linkScheme && i.clientDelivery !== 'none' && i.clientDelivery !== 'uri' && i.clientDelivery !== 'telegram',
     ),
     clashUnsupportedInboundTypes: pick(
       (i) =>
