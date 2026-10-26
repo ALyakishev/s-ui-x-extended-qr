@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 This is the English-language changelog. See `CHANGELOG-RU.md` for Russian and
 `CHANGELOG-ZH.md` for Simplified Chinese.
 
+## [1.1.2-tt.1] - Unreleased (fork prerelease)
+
+- Native TrustTunnel `tt://` links and QR codes for Shadowrocket, with selected TLS SNI, address overrides and multiple server addresses. Existing JSON delivery remains available.
+- Go 1.26.10 security toolchain and corrected database restore test synchronization.
+- Release packaging checks, separate reusable Windows frontend artifacts, and SBOM/provenance coverage for Linux and Windows.
+- See [fork release and Debian 12 instructions](docs/fork-trusttunnel-release.md).
+
 ## [1.1.2-beta7] - 2026-10-20 - sing-box 1.14.3
 
 - Updated the core to sing-box-extended `v1.14.3-extended-2.7.8`. Core startup follows the new launch order; NTP, the reference manager and the HTTP client now stop with the core.

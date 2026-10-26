@@ -258,4 +258,6 @@ if PATH="$tmp_dir/bin:$PATH" GH_TOKEN=test FAKE_GH_ASSETS="$unexpected_asset" \
     exit 1
 fi
 
+python3 -B "$root_dir/tests/test_release_archives.py"
+
 echo 'release tag validation smoke test passed'
