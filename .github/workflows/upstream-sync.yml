@@ -1,0 +1,41 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+# Writes use an environment-scoped, repository-limited PAT so push/PR events
+# start ordinary CI. Never fall back to GITHUB_TOKEN (event suppression).
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'ALyakishev/s-ui-x-extended-qr' && github.ref == 'refs/heads/s-ui-x-extended'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # REQUIRED: restrict this environment to the s-ui-x-extended branch only.
+    # This keeps the PAT unavailable to unreviewed sync-branch/PR workflows.
+    environment: upstream-sync
+    steps:
+      - name: Check out trusted workflow source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify sync safety with offline Git fixtures
+        run: python3 -B .github/scripts/test_upstream_sync.py -v
+
+      - name: Merge upstream into review branch and reconcile PR
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+          GH_PROMPT_DISABLED: "1"
+          GIT_TERMINAL_PROMPT: "0"
+        run: python3 -B -u .github/scripts/upstream_sync.py
