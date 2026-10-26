@@ -36,7 +36,8 @@ Before pushing the tag, confirm:
 - `.github/RELEASE_NOTES_<tag>.md` exists.
 - The local tag does not exist and GitHub has neither a tag nor a published release with that name.
 - `git diff --cached --check` passes and the staged file list contains no unrelated files.
-- Git author and committer are `deposist <235344042+deposist@users.noreply.github.com>`.
+- Git author and committer identify the actual fork maintainer; do not impersonate upstream.
+- For fork prereleases, follow [the fork release readiness and Debian 12 guide](fork-trusttunnel-release.md). Upstream README/Compose examples retain their upstream versions and are not fork installation commands.
 
 ## Reliability rules
 

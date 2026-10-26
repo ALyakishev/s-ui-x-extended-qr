@@ -1,3 +1,7 @@
+> **TrustTunnel fork prerelease:** use the [fork release and Debian 12 guide](docs/fork-trusttunnel-release.md).
+> The upstream installer and panel self-update still download from `deposist/s-ui-x-extended`.
+> Use the fork's verified archive for installation/upgrades to retain native `tt://` links.
+
 ## S-UI-X Extended
 
 [English](README.md) | [Русский](README-RU.md)

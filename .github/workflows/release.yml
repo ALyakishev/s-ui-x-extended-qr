@@ -6,7 +6,7 @@ on:
       tag:
         description: "Release tag"
         required: true
-        default: "v1.1.2-beta6"
+        default: "v1.1.2-tt.1"
         type: string
   push:
     tags:
@@ -56,6 +56,15 @@ jobs:
         with:
           tag: ${{ inputs.tag || github.ref_name }}
           event_commit: ${{ github.event_name == 'push' && github.sha || '' }}
+
+      - name: Verify fork release source
+        env:
+          RELEASE_COMMIT: ${{ steps.checkout.outputs.commit }}
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/s-ui-x-extended:refs/remotes/origin/s-ui-x-extended
+          git merge-base --is-ancestor "$RELEASE_COMMIT" refs/remotes/origin/s-ui-x-extended
+          echo "Release source: $RELEASE_COMMIT (reviewed main-branch history)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Reject already-published release tag reuse
         env:
@@ -310,7 +319,11 @@ jobs:
           [ "${{ matrix.naive }}" = "true" ] && BUILD_TAGS="${BUILD_TAGS},with_naive_outbound,with_musl"
           go build -ldflags="-w -s -checklinkname=0 -linkmode external -extldflags '-static' -X github.com/deposist/s-ui-x-extended/config.ArtifactPlatform=${{ matrix.platform }}" -tags "$BUILD_TAGS" -o sui main.go
           file sui
-          ldd sui 2>/dev/null || echo "Static binary confirmed"
+          readelf -l sui > "$RUNNER_TEMP/sui-program-headers"
+          if grep -q INTERP "$RUNNER_TEMP/sui-program-headers"; then
+            echo 'Release binary unexpectedly requires a dynamic loader' >&2
+            exit 1
+          fi
           if [ "${{ matrix.platform }}" = "amd64" ]; then
             test "$(./sui -v | awk 'NR == 1 { print $NF }')" = "${{ needs.release-ref.outputs.version }}"
           fi
@@ -356,6 +369,12 @@ jobs:
               f.write("\n")
           PY
 
+
+      - name: Validate final Linux archive and update manifest
+        env:
+          RELEASE_VERSION: ${{ needs.release-ref.outputs.version }}
+          RELEASE_PLATFORM: ${{ matrix.platform }}
+        run: python3 scripts/validate-linux-release.py "$RELEASE_VERSION" "$RELEASE_PLATFORM" .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -521,7 +540,7 @@ jobs:
       id-token: write
       attestations: write
     name: Release artifact security
-    needs: [release-ref, build-linux]
+    needs: [release-ref, build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Check out release tooling
@@ -540,12 +559,19 @@ jobs:
           path: release-assets
           merge-multiple: true
 
+      - name: Download Windows build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: s-ui-windows-*
+          path: release-assets
+          merge-multiple: true
+
       - name: Verify release checksums
         shell: bash
         run: |
           set -euo pipefail
           cd release-assets
-          sha256sum --check --strict s-ui-linux-*.sha256
+          sha256sum --check --strict s-ui-linux-*.sha256 s-ui-windows-*.sha256
 
       - name: Generate SPDX SBOMs for every release archive
         uses: anchore/sbom-action@b1b13de3df818f1657380c7d558539b493c17f2b # main 2026-07-21
@@ -576,6 +602,8 @@ jobs:
         with:
           subject-path: |
             release-assets/*.tar.gz
+            release-assets/*.zip
+            release-assets/*.manifest.json
             release-assets/*.sha256
             release-assets/*.spdx.json
 

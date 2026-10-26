@@ -4,6 +4,13 @@
 
 这是中文版更新日志。英文版请见 `CHANGELOG-EN.md`，俄文版请见 `CHANGELOG-RU.md`。
 
+## [1.1.2-tt.1] - 尚未发布（分支预发布版）
+
+- 为 Shadowrocket 生成原生 TrustTunnel `tt://` 链接和二维码，支持所选 TLS SNI、地址覆盖及多个服务器地址。保留 JSON 配置分发。
+- 使用含安全修复的 Go 1.26.10，并修复数据库恢复测试的同步问题。
+- 校验发布归档，隔离 Windows 前端构建产物，并将 Linux 和 Windows 纳入 SBOM 和来源证明。
+- 参见[分支发布与 Debian 12 安装说明](docs/fork-trusttunnel-release.md)。
+
 ## [1.1.2-beta7] - 2026-10-20 - sing-box 1.14.3
 
 - 内核更新至 sing-box-extended `v1.14.3-extended-2.7.8`。内核启动顺序已按新版本调整，NTP、引用管理器和 HTTP 客户端随内核一同停止。
