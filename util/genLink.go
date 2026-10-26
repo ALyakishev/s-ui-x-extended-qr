@@ -69,6 +69,9 @@ func LinkGenerator(clientConfig json.RawMessage, i *model.Inbound, hostname stri
 	var tls map[string]interface{}
 	if i.TlsId > 0 {
 		tls = prepareTls(i.Tls)
+		if i.Type == "trusttunnel" {
+			tls = prepareTrustTunnelTLS(i.Tls, tls)
+		}
 	}
 
 	var userConfig map[string]map[string]interface{}
@@ -144,6 +147,8 @@ func LinkGenerator(clientConfig json.RawMessage, i *model.Inbound, hostname stri
 		return sudokuLink(sudokuClientConfig(userConfig["sudoku"], i.Id), *inbound, Addrs)
 	case "mieru":
 		return mieruLink(userConfig["mieru"], *inbound, Addrs)
+	case "trusttunnel":
+		return trustTunnelLink(userConfig["trusttunnel"], Addrs)
 	}
 
 	return []string{}

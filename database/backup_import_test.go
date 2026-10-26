@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -135,16 +136,24 @@ func TestImportDBDrainsActiveOperationAndBlocksNewOperation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	activeDone := EnterDBOperation()
+	activeDone := sync.OnceFunc(EnterDBOperation())
+	defer activeDone()
 	restoreStarted := make(chan struct{})
 	previousHook := restoreStartedHook
 	restoreStartedHook = func() { close(restoreStarted) }
 	t.Cleanup(func() { restoreStartedHook = previousHook })
 
 	restoreDone := make(chan error, 1)
+	restoreExited := make(chan struct{})
 	go func() {
+		defer close(restoreExited)
 		restoreDone <- ImportDB(memMultipartFile{Reader: bytes.NewReader(backup)}, func() error { return nil })
 	}()
+	// Join before the earlier hook/DB cleanup, including on t.Fatal paths.
+	t.Cleanup(func() {
+		activeDone()
+		<-restoreExited
+	})
 	select {
 	case <-restoreStarted:
 	case <-time.After(time.Second):
@@ -155,6 +164,19 @@ func TestImportDBDrainsActiveOperationAndBlocksNewOperation(t *testing.T) {
 		t.Fatalf("restore completed before active operation drained: %v", err)
 	default:
 	}
+	// Wait for an actual queued writer, not the earlier notification hook.
+	deadline := time.Now().Add(time.Second)
+	for {
+		leave, entered := TryEnterDBOperation()
+		if !entered {
+			break
+		}
+		leave()
+		if time.Now().After(deadline) {
+			t.Fatal("restore writer did not queue")
+		}
+		runtime.Gosched()
+	}
 	// The active request keeps using the old handle while restore is queued;
 	// it must not see "database is closed" before it leaves the barrier.
 	if err := GetDB().Exec("SELECT 1").Error; err != nil {
@@ -162,7 +184,9 @@ func TestImportDBDrainsActiveOperationAndBlocksNewOperation(t *testing.T) {
 	}
 
 	newOperationDone := make(chan error, 1)
+	newOperationExited := make(chan struct{})
 	go func() {
+		defer close(newOperationExited)
 		leave := EnterDBOperation()
 		defer leave()
 		current := GetDB()
@@ -172,6 +196,11 @@ func TestImportDBDrainsActiveOperationAndBlocksNewOperation(t *testing.T) {
 		}
 		newOperationDone <- current.Exec("SELECT 1").Error
 	}()
+	t.Cleanup(func() {
+		activeDone()
+		<-restoreExited
+		<-newOperationExited
+	})
 	select {
 	case err := <-newOperationDone:
 		t.Fatalf("new operation bypassed restore barrier: %v", err)

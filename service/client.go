@@ -419,11 +419,11 @@ func (s *ClientService) updateLinksWithFixedInbounds(tx *gorm.DB, clients []*mod
 // assigned to one of these before the upgrade has a links blob with no entry for
 // it, and nothing regenerates that until the operator next saves the client.
 // RegenerateMissingLocalLinks closes that gap at startup.
-var linkBackfillInboundTypes = []string{"sudoku", "mieru"}
+var linkBackfillInboundTypes = []string{"sudoku", "mieru", "trusttunnel"}
 
 // RegenerateMissingLocalLinks is an idempotent startup backfill: for every client
 // assigned to an inbound whose type only recently started producing a local link
-// (sudoku, mieru), it regenerates the client's local links and persists them if
+// (sudoku, mieru, trusttunnel), it regenerates local links and persists them if
 // they changed. Clients that already have the links, or are assigned to no such
 // inbound, are left untouched and cause no write.
 //
@@ -441,7 +441,7 @@ func (s *ClientService) RegenerateMissingLocalLinks(hostname string) error {
 		return err
 	}
 	if len(backfillInbounds) == 0 {
-		return nil // no sudoku/mieru inbounds; nothing to backfill
+		return nil // no relevant inbounds; nothing to backfill
 	}
 	backfillInboundIDs := make(map[uint]struct{}, len(backfillInbounds))
 	for _, in := range backfillInbounds {
@@ -487,7 +487,7 @@ func (s *ClientService) RegenerateMissingLocalLinks(hostname string) error {
 			inboundCache[cacheKey] = inbounds
 		}
 
-		// Backfill any missing per-protocol credentials first (mieru needs a
+		// Backfill any missing per-protocol credentials first (mieru/TrustTunnel need a
 		// name/password to produce a link; sudoku is keyless and unaffected).
 		config := client.Config
 		configChanged := false
@@ -526,7 +526,7 @@ func (s *ClientService) RegenerateMissingLocalLinks(hostname string) error {
 		updated++
 	}
 	if updated > 0 {
-		logger.Infof("link backfill: regenerated local links for %d client(s) with sudoku/mieru inbounds", updated)
+		logger.Infof("link backfill: regenerated local links for %d client(s) with sudoku/mieru/trusttunnel inbounds", updated)
 	}
 	return nil
 }

@@ -48,4 +48,4 @@ export const outboundGroupCapabilities: OutboundGroupCapability[] = [
 ]
 export const providerTypes: string[] = ['inline', 'local', 'remote']
 export const clashUnsupportedInboundTypes: string[] = ['naive', 'shadowtls', 'mieru', 'sudoku', 'trusttunnel', 'ssh', 'mtproxy']
-export const noLinkInboundTypes: string[] = ['shadowtls', 'mieru', 'sudoku', 'trusttunnel', 'ssh']
+export const noLinkInboundTypes: string[] = ['shadowtls', 'mieru', 'sudoku', 'ssh']

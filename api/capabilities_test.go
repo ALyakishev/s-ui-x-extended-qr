@@ -30,9 +30,10 @@ func TestGetCapabilitiesReturnsSafeAdminView(t *testing.T) {
 		Obj     struct {
 			BuildTags map[string]bool `json:"buildTags"`
 			Inbounds  []struct {
-				Type      string `json:"type"`
-				Available bool   `json:"available"`
-				BuildTag  string `json:"buildTag"`
+				Type           string `json:"type"`
+				Available      bool   `json:"available"`
+				BuildTag       string `json:"buildTag"`
+				ClientDelivery string `json:"clientDelivery"`
 			} `json:"inbounds"`
 		} `json:"obj"`
 	}
@@ -47,6 +48,11 @@ func TestGetCapabilitiesReturnsSafeAdminView(t *testing.T) {
 	}
 	if len(env.Obj.Inbounds) == 0 {
 		t.Fatal("expected inbounds")
+	}
+	for _, in := range env.Obj.Inbounds {
+		if in.Type == "trusttunnel" && in.ClientDelivery != "json" {
+			t.Fatal("TrustTunnel capabilities API must preserve JSON delivery metadata")
+		}
 	}
 
 	// Security: the response must expose ONLY bool flags + capability metadata —

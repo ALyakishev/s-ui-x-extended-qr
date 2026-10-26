@@ -10,6 +10,7 @@ import {
   providerTypes,
   clashUnsupportedInboundTypes,
   noListenInboundTypes,
+  noLinkInboundTypes,
 } from './capabilities'
 
 // Frozen copies of the hand-maintained lists that lived inline in
@@ -43,6 +44,7 @@ type InboundRow = {
   hasUsers?: boolean
   alias?: boolean
   clientDelivery?: string
+  linkScheme?: string
   hasInData?: boolean
   hasTlsTemplate?: boolean
   muxAvailable?: boolean
@@ -70,6 +72,19 @@ type OutboundRow = {
 }
 
 describe('capabilities generated from protocols.json', () => {
+  it('keeps TrustTunnel JSON delivery alongside native link/QR delivery', () => {
+    const manifest = JSON.parse(Object.values(rawManifest)[0]) as { inbounds: InboundRow[] }
+    const tt = manifest.inbounds.find((i) => i.type === 'trusttunnel')
+    expect(tt?.clientDelivery).toBe('json')
+    expect(tt?.linkScheme).toBe('tt')
+    expect(inboundAssignable).toContain('trusttunnel')
+    expect(noLinkInboundTypes).not.toContain('trusttunnel')
+    expect(clashUnsupportedInboundTypes).toContain('trusttunnel')
+    const pick = manifest.inbounds.filter((i) =>
+      !i.linkScheme && i.clientDelivery !== 'none' && i.clientDelivery !== 'uri' && i.clientDelivery !== 'telegram',
+    ).map((i) => i.type)
+    expect(asSet(noLinkInboundTypes)).toEqual(asSet(pick))
+  })
   it('reproduces the legacy inline Inbound.vue lists (set-wise)', () => {
     expect(asSet(inboundWithUsers)).toEqual(asSet(legacyInboundWithUsers))
     expect(asSet(HasInData)).toEqual(asSet(legacyHasInData))

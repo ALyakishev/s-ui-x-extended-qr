@@ -67,7 +67,7 @@ var legacyAllowedUserJSONFields = map[string]struct{}{
 var legacyInboundTypeWithLink = []string{
 	"socks", "http", "mixed", "shadowsocks", "naive", "hysteria",
 	"hysteria2", "anytls", "tuic", "vless", "trojan", "vmess",
-	"mtproxy",
+	"mtproxy", "trusttunnel", // Native TrustTunnel TLV share links.
 }
 
 func TestUserJSONFieldsMatchesLegacy(t *testing.T) {
@@ -93,6 +93,26 @@ func TestInboundTypesWithLinkMatchesLegacySet(t *testing.T) {
 	}
 	if dups := duplicates(got); len(dups) > 0 {
 		t.Fatalf("InboundTypesWithLink has duplicates: %v", dups)
+	}
+}
+
+func TestTrustTunnelJSONAndLinkCapabilities(t *testing.T) {
+	found := false
+	for _, in := range Inbounds() {
+		if in.Type == "trusttunnel" {
+			found = true
+			if in.ClientDelivery != "json" || in.LinkScheme != "tt" || in.OutJSONBuilder != "trusttunnel" {
+				t.Fatal("TrustTunnel must retain JSON delivery and add native links independently")
+			}
+		}
+	}
+	if !found {
+		t.Fatal("TrustTunnel capability missing")
+	}
+	for _, in := range BuildAPIView().Inbounds {
+		if in.Type == "trusttunnel" && in.ClientDelivery != "json" {
+			t.Fatal("capabilities API changed existing TrustTunnel delivery metadata")
+		}
 	}
 }
 
