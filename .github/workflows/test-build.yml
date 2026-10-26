@@ -1,0 +1,158 @@
+name: Test build Linux AMD64
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-build-linux-amd64-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "25"
+  # Keep these pins and tags aligned with release.yml's Linux AMD64 build.
+  CRONET_GO_VERSION: "0d28acc44093df24b2526dea3d6ffefd6b0a54f0"
+  DEBIAN_ARCHIVE_KEYRING_URL: https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2023.3%2Bdeb12u2_all.deb
+  DEBIAN_ARCHIVE_KEYRING_SHA256: f699e2f88dca05212f2a452b58475f2993cb6993dfbafb1d0205a3291eb8b4b8
+  BUILD_TAGS: "with_quic,with_grpc,with_utls,with_acme,with_gvisor,badlinkname,tfogo_checklinkname0,with_tailscale,with_dhcp,with_wireguard,with_masque,with_mtproxy,with_openvpn,with_sudoku,with_trusttunnel,with_call,with_ccm,with_ocm,with_oomkiller,with_cloudflared,with_openconnect,with_profiler,with_usbip,with_naive_outbound,with_musl"
+
+jobs:
+  build:
+    name: Linux AMD64 (manual, no release)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out the dispatched commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify source commit
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_COMMIT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install native build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential ca-certificates curl git python3 pkg-config \
+            xz-utils unzip file binutils
+
+      - name: Build and verify frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          npm run verify:dist
+
+      - name: Prepare embedded frontend
+        run: |
+          rm -rf web/html
+          mkdir -p web/html
+          cp -a frontend/dist/. web/html/
+          test -s web/html/index.html
+
+      # Use the same native Cronet/musl path as the production AMD64 release,
+      # rather than producing a binary that needs a separate libcronet.so.
+      - name: Check out pinned cronet-go toolchain
+        run: |
+          git init "$RUNNER_TEMP/cronet-go"
+          git -C "$RUNNER_TEMP/cronet-go" remote add origin https://github.com/sagernet/cronet-go.git
+          git -C "$RUNNER_TEMP/cronet-go" fetch --depth=1 origin "$CRONET_GO_VERSION"
+          git -C "$RUNNER_TEMP/cronet-go" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/cronet-go" rev-parse HEAD)" = "$CRONET_GO_VERSION"
+          git -C "$RUNNER_TEMP/cronet-go" submodule update --init --recursive --depth=1
+
+      - name: Install verified Debian sysroot keyring
+        run: |
+          package="$RUNNER_TEMP/debian-archive-keyring.deb"
+          extract_dir="$RUNNER_TEMP/debian-archive-keyring"
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --connect-timeout 15 --retry 5 --retry-all-errors \
+            --output "$package" "$DEBIAN_ARCHIVE_KEYRING_URL"
+          echo "$DEBIAN_ARCHIVE_KEYRING_SHA256  $package" | sha256sum --check --strict
+          mkdir -p "$extract_dir"
+          dpkg-deb --extract "$package" "$extract_dir"
+          install -m 0644 \
+            "$extract_dir/usr/share/keyrings/debian-archive-keyring.gpg" \
+            "$RUNNER_TEMP/cronet-go/naiveproxy/src/build/linux/sysroot_scripts/keyring.gpg"
+
+      - name: Prepare production musl toolchain
+        working-directory: ${{ runner.temp }}/cronet-go
+        run: |
+          go run ./cmd/build-naive --target=linux/amd64 --libc=musl download-toolchain
+          go run ./cmd/build-naive --target=linux/amd64 --libc=musl env > "$RUNNER_TEMP/cronet-env"
+          while IFS= read -r line; do
+            line="${line#export }"
+            [[ -z "$line" ]] && continue
+            echo "$line" >> "$GITHUB_ENV"
+          done < "$RUNNER_TEMP/cronet-env"
+
+      - name: Build embedded Linux AMD64 binary
+        env:
+          CGO_ENABLED: "1"
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          mkdir -p build/test-linux-amd64
+          go build -mod=readonly \
+            -ldflags="-w -s -checklinkname=0 -linkmode external -extldflags '-static' -X github.com/deposist/s-ui-x-extended/config.ArtifactPlatform=amd64" \
+            -tags "$BUILD_TAGS" -o build/test-linux-amd64/sui main.go
+
+      - name: Verify binary and write provenance/checksum
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref }}
+        run: |
+          binary=build/test-linux-amd64/sui
+          file "$binary"
+          file "$binary" | grep -q 'ELF 64-bit.*x86-64'
+          readelf -l "$binary" > "$RUNNER_TEMP/sui-program-headers"
+          if grep -q 'INTERP' "$RUNNER_TEMP/sui-program-headers"; then
+            echo 'Expected a static release-compatible binary' >&2
+            exit 1
+          fi
+          "$binary" -v
+          {
+            echo "commit=$SOURCE_COMMIT"
+            echo "ref=$SOURCE_REF"
+            echo "tags=$BUILD_TAGS"
+            go version
+            go version -m "$binary"
+          } > build/test-linux-amd64/build-info.txt
+          cd build/test-linux-amd64
+          sha256sum sui > sui.sha256
+          sha256sum --check --strict sui.sha256
+
+      - name: Upload test binary (no GitHub Release)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sui-linux-amd64-test-${{ github.sha }}
+          path: |
+            build/test-linux-amd64/sui
+            build/test-linux-amd64/sui.sha256
+            build/test-linux-amd64/build-info.txt
+          if-no-files-found: error
+          retention-days: 7
