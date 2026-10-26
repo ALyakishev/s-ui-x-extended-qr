@@ -13,6 +13,7 @@ import (
 // every link type in InboundTypeWithLink produces at least one link.
 // #nosec G101 -- synthetic credentials used only as link-generator test input.
 const wellFormedClientConfig = `{
+ "trusttunnel": {"name":"u","password":"p"},
 	"socks": {"username":"u","password":"p"},
 	"http": {"username":"u","password":"p"},
 	"naive": {"username":"u","password":"p"},
@@ -40,6 +41,7 @@ func wellFormedInbound(typ string) *model.Inbound {
 
 // linkSchemePrefixes maps each protocol to the URI scheme(s) its links must use.
 var linkSchemePrefixes = map[string][]string{
+	"trusttunnel": {"tt://?"},
 	"socks":       {"socks5://"},
 	"http":        {"http://"},
 	"mixed":       {"socks5://", "http://"},

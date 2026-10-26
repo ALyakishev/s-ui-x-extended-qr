@@ -67,7 +67,7 @@ var legacyAllowedUserJSONFields = map[string]struct{}{
 var legacyInboundTypeWithLink = []string{
 	"socks", "http", "mixed", "shadowsocks", "naive", "hysteria",
 	"hysteria2", "anytls", "tuic", "vless", "trojan", "vmess",
-	"mtproxy",
+	"mtproxy", "trusttunnel", // Native TrustTunnel TLV share links.
 }
 
 func TestUserJSONFieldsMatchesLegacy(t *testing.T) {
