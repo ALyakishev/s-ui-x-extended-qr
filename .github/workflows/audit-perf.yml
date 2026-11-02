@@ -17,7 +17,7 @@ concurrency:
 
 env:
   GOFLAGS: -mod=readonly
-  BENCHSTAT_VERSION: "v0.0.0-20260701181110-82a0b07e230d"
+  BENCHSTAT_VERSION: "v0.0.0-20260709024250-82a0b07e230d"
 
 jobs:
   bench-all:
